@@ -1,0 +1,57 @@
+# --- build output -------------------------------------------------------
+tauri/src-tauri/target/
+# resources/ is filled by scripts/prepare_bundle.sh. The placeholder stays
+# tracked because tauri.conf.json bundles resources/**/*, and tauri-build
+# fails `cargo check` on a fresh clone when that glob matches nothing.
+tauri/src-tauri/resources/*
+!tauri/src-tauri/resources/.gitkeep
+dist/
+
+# The Apple Vision sidecar is compiled from bin/vision-ocr.swift, which IS
+# tracked. The binary is not.
+service_pipeline/bin/vision-ocr
+
+# --- models & vendored runtimes (GB-scale, fetched by setup) -------------
+service_pipeline/models/
+*.bin
+*.gguf
+
+# --- generated workspace data -------------------------------------------
+# demo/db is the index (SQLite + Chroma + keyframe thumbnails); demo media
+# is downloaded by demo/real_photos/download.sh and real_videos/download.sh.
+demo/db/
+demo/exports/
+demo/episodes/
+demo/real_photos/*.jpg
+demo/real_photos/*.png
+demo/real_videos/*.mp4
+demo/demo_reel/*.jpg
+demo/demo_reel/*.mp4
+# partial downloads left by an interrupted demo/*/download.sh
+demo/**/*.part
+
+# --- Supabase CLI local state (project ref, org id) ----------------------
+license_server/supabase/.temp/
+
+# --- python -------------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# --- macOS / editors ----------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
+
+# ffmpeg build tree — extracted source, objects, staged binaries. The recipe
+# is scripts/build_ffmpeg_lgpl.sh, so none of it needs tracking.
+third_party/ffmpeg/build/
+third_party/ffmpeg/notices/
+
+# NOT ignored, deliberately: third_party/ffmpeg/ffmpeg-8.0.1.tar.xz and the
+# licence texts. They are kept so any build made from this repo can meet the
+# LGPL 2.1 obligation to provide the corresponding source. Keeping the exact
+# tarball we compiled means that holds even if the upstream release URL moves
+# or the checksum is re-rolled. 11 MB is cheap insurance.

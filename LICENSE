@@ -1,0 +1,60 @@
+Copyright (c) 2026 Andrii Boiko. All rights reserved.
+
+The source code in this repository is published so that it can be read and
+reviewed, for example as part of the author's portfolio. Publishing it does
+not license it. No permission is granted to use, copy, modify, merge,
+publish, distribute, sublicense, or sell this software or any part of it, or
+to build, install, run, or host it, without prior written permission from the
+copyright holder.
+
+Because this repository is public on GitHub, the GitHub Terms of Service let
+GitHub users view it and fork it within GitHub. No other rights are granted,
+by implication or otherwise.
+
+To ask for permission, contact the author through https://github.com/B0yko
+(for example by opening an issue at https://github.com/B0yko/tern/issues).
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Third-party components
+
+This repository contains, or is built against, third-party software that
+stays under its own licence. Nothing above limits the rights those licences
+give you.
+
+- FFmpeg 8.0.1. third_party/ffmpeg/ffmpeg-8.0.1.tar.xz is the unmodified
+  upstream source. scripts/build_ffmpeg_lgpl.sh builds it with --disable-gpl
+  --disable-nonfree --disable-version3 and without libx264 or libx265, so the
+  resulting libraries are under the GNU Lesser General Public License,
+  version 2.1 or later (third_party/ffmpeg/COPYING.LGPLv2.1).
+- LAME (libmp3lame), linked by that build for MP3 export: GNU Library General
+  Public License, version 2 or later (third_party/lame/COPYING). Not in this
+  repository; the build copies the Homebrew library.
+- whisper.cpp and the Whisper model weights: MIT. Not included; whisper-cli
+  comes from Homebrew and the model is downloaded on first use.
+- SigLIP-2 model weights (google/siglip2-base-patch16-256): Apache 2.0. Not
+  included; downloaded from Hugging Face on first use.
+- Silero VAD: MIT. ChromaDB, Transformers and sentence-transformers:
+  Apache 2.0. PyTorch: BSD-style. Tauri: MIT or Apache 2.0.
+- pillow-heif: BSD-3-Clause source, but its macOS binary wheels bundle
+  libheif and libde265 (LGPL 3) and x265 (GPL 2). See third_party/NOTICE.md
+  before building an app bundle.
+- Inter, Inter Tight and JetBrains Mono (app/fonts/): SIL Open Font License
+  1.1. The licence texts are next to the fonts, in app/fonts/LICENSE-*.txt.
+- All other dependencies are declared in api/pyproject.toml,
+  service_pipeline/pyproject.toml and tauri/src-tauri/Cargo.toml, each under
+  its own licence.
+
+third_party/NOTICE.md explains how the LGPL obligations would be met in a
+built app bundle. No binary has been distributed from this repository. Demo
+media fetched by the scripts under demo/ is not part of this repository and
+keeps its original licence; sources and licences are listed in the README
+next to each download script.

@@ -1,0 +1,226 @@
+/* app/motion.css — motion + microinteraction polish.
+   Loaded LAST so it can lean on tokens + per-component CSS variables.
+   Uses @starting-style for overlay entrances (graceful degradation on
+   Safari < 17.5: the animation simply doesn't play; no broken state). */
+
+/* ─── Overlay entrances ─────────────────────────────────────────────── */
+/* Drops, modals, sheets, popovers all start slightly smaller + transparent
+   when revealed (hidden → !hidden). Toast slides up from below. */
+
+.modal-overlay,
+.sheet-overlay,
+.popover,
+.drop-overlay {
+  transition: opacity var(--motion-base), transform var(--motion-base);
+  opacity: 1;
+  transform: scale(1);
+}
+@supports (transition-behavior: allow-discrete) {
+  .modal-overlay, .sheet-overlay, .popover, .drop-overlay {
+    transition: opacity var(--motion-base), transform var(--motion-base);
+  }
+  @starting-style {
+    .modal-overlay, .sheet-overlay, .popover, .drop-overlay {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+}
+
+.indexing-toast {
+  transition: opacity var(--motion-slow), transform var(--motion-slow);
+  opacity: 1;
+  transform: translateY(0);
+}
+@supports (transition-behavior: allow-discrete) {
+  @starting-style {
+    .indexing-toast {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+}
+
+/* Inner cards inside modals/sheets — extra subtle pop */
+.modal, .ob-card {
+  animation: tern-card-enter var(--motion-slow);
+}
+@keyframes tern-card-enter {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ─── Detail-pane content swap ──────────────────────────────────────── */
+/* Every selection change replaces innerHTML; fade-in softens the jump. */
+.detail {
+  animation: tern-detail-swap var(--motion-base);
+}
+@keyframes tern-detail-swap {
+  from { opacity: 0.35; transform: translateX(2px); }
+  to   { opacity: 1;    transform: translateX(0); }
+}
+
+/* ─── Empty-state cascade ──────────────────────────────────────────── */
+/* Stagger the hero pieces in on first load. backwards = element starts at
+   the `from` state before the delay elapses, so nothing flashes. */
+.empty-hero h1        { animation: tern-hero-rise 380ms ease-out backwards; }
+.empty-hero p         { animation: tern-hero-rise 380ms ease-out 60ms backwards; }
+.empty-pills          { animation: tern-hero-rise 380ms ease-out 120ms backwards; }
+.empty-cta            { animation: tern-hero-rise 380ms ease-out 180ms backwards; }
+.empty-privacy        { animation: tern-hero-rise 380ms ease-out 240ms backwards; }
+.empty-list .row      { animation: tern-row-fade 280ms ease-out backwards; }
+@keyframes tern-hero-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes tern-row-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ─── Result-row press feedback ─────────────────────────────────────── */
+.row {
+  transition:
+    background var(--motion-fast),
+    color var(--motion-fast),
+    transform 80ms ease-out;
+}
+.row:active     { transform: scale(0.995); }
+.sb-row:active  { transform: scale(0.99); }
+
+/* ─── Button press microinteractions ───────────────────────────────── */
+.topbar-btn,
+.btn,
+.detail-btn,
+.empty-cta,
+.empty-pill,
+.indexing-toast-cancel,
+.sb-license,
+.api-banner-retry,
+.prefs-seg button,
+.prefs-swatch,
+.prefs-toggle-track {
+  transition:
+    background var(--motion-fast),
+    color var(--motion-fast),
+    filter var(--motion-fast),
+    transform 60ms ease-out;
+}
+.topbar-btn:active,
+.btn:active,
+.detail-btn:active,
+.empty-cta:active,
+.empty-pill:active,
+.indexing-toast-cancel:active,
+.api-banner-retry:active,
+.prefs-seg button:active,
+.prefs-swatch:active {
+  transform: scale(0.96);
+}
+
+/* ─── Theme transitions ────────────────────────────────────────────── */
+/* Smooth Light ↔ Dark, accent change, Power Mode swap on top-level surfaces.
+   Per-element hover/active transitions stay faster and aren't slowed by this. */
+html { transition: background-color var(--motion-base); }
+.topbar,
+.sidebar,
+.results-pane,
+.detail-pane,
+.detail-head,
+.detail-actions,
+.modal,
+.popover,
+.indexing-toast,
+.empty-pill,
+.search-wrap,
+.row,
+.sb-row {
+  transition:
+    background-color var(--motion-base),
+    border-color var(--motion-base),
+    color var(--motion-base);
+}
+
+/* ─── Detail-pane transcript skeleton ──────────────────────────────── */
+/* Shown while /api/transcript/window is in flight (detail.js inserts it
+   between the scaffold render and the await). Same shimmer language as
+   the result-list skeleton. */
+.transcript-skeleton {
+  display: flex; flex-direction: column; gap: 9px;
+  padding: 6px 0;
+}
+.transcript-skeleton .ts-line {
+  height: 11px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(0,0,0,.04), rgba(0,0,0,.09), rgba(0,0,0,.04));
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+:root[data-power-mode="on"] .transcript-skeleton .ts-line,
+:root[data-appearance="dark"] .transcript-skeleton .ts-line {
+  background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.09), rgba(255,255,255,.04));
+  background-size: 200% 100%;
+}
+.transcript-skeleton .ts-line:nth-child(1) { width: 85%; }
+.transcript-skeleton .ts-line:nth-child(2) { width: 100%; }
+.transcript-skeleton .ts-line:nth-child(3) { width: 92%; height: 28px; border-radius: 6px; }
+.transcript-skeleton .ts-line:nth-child(4) { width: 88%; }
+.transcript-skeleton .ts-line:nth-child(5) { width: 70%; }
+
+/* ─── Toast auto-hide ──────────────────────────────────────────────── */
+/* indexing.js adds .done class when files_done == files_pending == 0; CSS
+   fades out and the JS removes the element after the transition. */
+.indexing-toast.done {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 350ms ease-out, transform 350ms ease-out;
+}
+
+/* ─── Hover-preview pulse ──────────────────────────────────────────── */
+/* preview.js adds .row-previewing while the audio is playing — gentle
+   accent edge to signal the row is the source of the sound. */
+.row.row-previewing {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.row.row-previewing .row-thumb {
+  animation: tern-preview-glow 1.2s ease-in-out infinite alternate;
+}
+@keyframes tern-preview-glow {
+  from { box-shadow: 0 1px 2px rgba(0,0,0,.06), inset 0 0 0 0.5px rgba(0,0,0,.04); }
+  to   { box-shadow: 0 0 0 2px var(--accent-tint-30), inset 0 0 0 0.5px rgba(0,0,0,.04); }
+}
+
+/* ─── Sidebar slide ───────────────────────────────────────────────── */
+.sb { animation: tern-sidebar-slide var(--motion-base); }
+@keyframes tern-sidebar-slide {
+  from { opacity: 0.6; transform: translateX(-6px); }
+  to   { opacity: 1;   transform: translateX(0); }
+}
+
+/* ─── Focus rings — Apple-style accent halo ─────────────────────────── */
+button:focus-visible,
+.row:focus-visible,
+.sb-row:focus-visible,
+.empty-pill:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid var(--accent-tint-30);
+  outline-offset: 2px;
+}
+/* Search input has its own halo via .search-wrap:focus-within in shell.css */
+#search-input:focus { outline: none; }
+
+/* ─── Result-list skeleton — already animates; smooth out exit ──────── */
+.skeleton-row { animation: skeleton-shimmer 1.4s linear infinite, tern-row-fade 280ms ease-out backwards; }
+
+/* ─── Topbar drag-region indicator (only visible to keyboard users) ──── */
+.topbar:focus-within { background: var(--pane-elevated); }
+
+/* ─── prefers-reduced-motion ───────────────────────────────────────── */
+/* Honor the macOS "Reduce Motion" accessibility setting. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

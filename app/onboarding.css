@@ -1,0 +1,38 @@
+/* app/onboarding.css */
+.ob-card {
+  background: var(--pane-elevated);
+  border-radius: 14px;
+  width: 560px; max-width: 92vw;
+  padding: 32px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.30);
+  text-align: center;
+}
+.ob-title {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+.ob-sub { color: var(--text-3); font-size: 13.5px; line-height: 1.5; }
+.ob-illustration {
+  margin: 24px auto;
+  width: 280px; height: 100px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-tint-12);
+  border-radius: 10px;
+  color: var(--accent);
+}
+.ob-actions {
+  margin-top: 20px;
+  display: flex; gap: 10px; justify-content: center;
+}
+.ob-step-dots {
+  margin: 16px 0 0;
+  display: flex; gap: 5px; justify-content: center;
+}
+.ob-step-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(0,0,0,.12);
+}
+.ob-step-dot.on { background: var(--accent); }

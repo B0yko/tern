@@ -1,0 +1,153 @@
+/* app/tokens.css — design tokens for the macOS-native shell.
+   Live values set on :root by modules/theme.js based on Preferences.
+   Power Mode flips :root[data-power-mode="on"] to the editor-grade variant. */
+
+/* Restore standard HTML `hidden` semantics. Several overlay classes
+   (.drop-overlay, .modal-overlay, .sheet-overlay, .api-banner, .popover)
+   carry `display: flex` directly — that beats the user-agent stylesheet's
+   default `[hidden] { display: none }` because author CSS wins on equal
+   specificity. Without this rule every overlay would be permanently
+   visible from page load, stacking on top of the workspace and capturing
+   all clicks (looking like a total app freeze). `!important` is justified
+   because `hidden` is a semantic HTML attribute and must always win. */
+[hidden] { display: none !important; }
+
+:root {
+  /* Typography */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Tight", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+
+  /* Accent (default: system blue light). theme.js overrides per-pick. */
+  --accent:           #007aff;
+  --accent-on:        #ffffff;
+  --accent-tint-12:   rgba(0, 122, 255, .12);
+  --accent-tint-18:   rgba(0, 122, 255, .18);
+  --accent-tint-30:   rgba(0, 122, 255, .30);
+
+  /* Surfaces (light mode defaults) */
+  --canvas:           rgba(247, 247, 250, .70);
+  --pane:             rgba(255, 255, 255, .55);
+  --pane-elevated:    rgba(255, 255, 255, .85);
+  --pane-vibrant:     rgba(245, 245, 247, .70);
+  --pane-divider:     rgba(0, 0, 0, .06);
+  --pane-border:      rgba(0, 0, 0, .10);
+  --pane-shadow:      0 8px 24px rgba(0, 0, 0, .10);
+
+  /* Text */
+  --text:             #1d1d1f;
+  --text-2:           #3a3a3c;
+  --text-3:           #6e6e73;
+  --text-4:           #8a8a8e;
+
+  /* Marks (yellow highlight on matched terms) */
+  --mark:             #ffd166;
+  --mark-dim:         #fff3a0;
+  --mark-on:          #1d1d1f;
+
+  /* Sizes (Comfortable density) */
+  --row-h:            64px;
+  --thumb-size:       56px;
+  --thumb-radius:     8px;
+  --pill-radius:      4px;
+  --btn-radius:       6px;
+  --pane-radius:      11px;
+
+  /* Status dots */
+  --ok:               #34c759;
+  --warn:             #ffcc00;
+  --err:              #ff3b30;
+
+  /* Motion */
+  --motion-fast:      120ms ease-out;
+  --motion-base:      180ms ease-out;
+  --motion-slow:      250ms cubic-bezier(.2, .8, .2, 1);
+}
+
+/* Dark mode — explicit (Appearance = Dark) AND system-when-prefers-dark.
+   Originally written as a malformed selector list combining a regular selector
+   with an @media at-rule, which the CSS parser drops entirely. Split into two
+   valid rules sharing the same variable body. */
+:root[data-appearance="dark"] {
+  --canvas:        rgba(28, 28, 32, .72);
+  --pane:          rgba(28, 28, 32, .55);
+  --pane-elevated: rgba(38, 38, 44, .85);
+  --pane-vibrant:  rgba(22, 22, 28, .80);
+  --pane-divider:  rgba(255, 255, 255, .06);
+  --pane-border:   rgba(255, 255, 255, .10);
+  --pane-shadow:   0 8px 24px rgba(0, 0, 0, .40);
+
+  --text:   #f2f2f5;
+  --text-2: #cbcbd0;
+  --text-3: #8e8e93;
+  --text-4: #6e6e73;
+
+  --accent-tint-12: rgba(10, 132, 255, .18);
+  --accent-tint-18: rgba(10, 132, 255, .25);
+  --accent-tint-30: rgba(10, 132, 255, .40);
+
+  --mark: #ffcc40;
+  --mark-dim: #6a5a18;
+  --mark-on: #1d1d1f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-appearance="system"] {
+    --canvas:        rgba(28, 28, 32, .72);
+    --pane:          rgba(28, 28, 32, .55);
+    --pane-elevated: rgba(38, 38, 44, .85);
+    --pane-vibrant:  rgba(22, 22, 28, .80);
+    --pane-divider:  rgba(255, 255, 255, .06);
+    --pane-border:   rgba(255, 255, 255, .10);
+    --pane-shadow:   0 8px 24px rgba(0, 0, 0, .40);
+
+    --text:   #f2f2f5;
+    --text-2: #cbcbd0;
+    --text-3: #8e8e93;
+    --text-4: #6e6e73;
+
+    --accent-tint-12: rgba(10, 132, 255, .18);
+    --accent-tint-18: rgba(10, 132, 255, .25);
+    --accent-tint-30: rgba(10, 132, 255, .40);
+
+    --mark: #ffcc40;
+    --mark-dim: #6a5a18;
+    --mark-on: #1d1d1f;
+  }
+}
+
+/* Compact density */
+:root[data-density="compact"] {
+  --row-h:    48px;
+  --thumb-size: 44px;
+}
+
+/* Power Mode — editor-grade theme override */
+:root[data-power-mode="on"] {
+  --canvas:        #0e1018;
+  --pane:          #13151c;
+  --pane-elevated: #16181f;
+  --pane-vibrant:  #1c1f28;
+  --pane-divider:  #262932;
+  --pane-border:   #2a2e3a;
+  --pane-shadow:   0 10px 28px rgba(0, 0, 0, .55);
+
+  --text:   #e6ebf5;
+  --text-2: #cdd2dd;
+  --text-3: #9ba2b0;
+  --text-4: #6a7180;
+
+  --row-h:      56px;
+  --thumb-size: 48px;
+
+  --accent:        #6aa8ff;
+  --accent-on:     #0a0d14;
+  --accent-tint-12: rgba(106, 168, 255, .15);
+  --accent-tint-18: rgba(106, 168, 255, .22);
+  --accent-tint-30: rgba(106, 168, 255, .38);
+
+  /* three-color source coding */
+  --src-speech: #6aa8ff;
+  --src-ocr:    #ff9500;
+  --src-visual: #34c759;
+}

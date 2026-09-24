@@ -1,0 +1,11 @@
+# Minimal project config so `supabase functions deploy --workdir license_server`
+# knows this directory is a Supabase project. Everything else about the
+# project (database, auth, storage) is managed in the dashboard.
+# project_id is only a local name; deploys target the project given by
+# --project-ref.
+project_id = "tern-license"
+
+[functions.license-validate]
+# The desktop app posts without an Authorization header; the licence key is
+# the credential. See license_server/README.md.
+verify_jwt = false

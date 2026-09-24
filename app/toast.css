@@ -1,0 +1,89 @@
+/* app/toast.css — transient action-confirmation toasts.
+   Bottom-right stack; up to 3 visible, oldest gets pushed out. */
+
+.toast-stack {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column-reverse;  /* newest on top, older below */
+  gap: 8px;
+  z-index: 10000;
+  pointer-events: none;  /* let clicks pass through the empty gaps */
+}
+
+.toast {
+  pointer-events: auto;  /* but the toast itself is clickable */
+  min-width: 120px;
+  max-width: 320px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--pane-vibrant, rgba(28, 28, 36, 0.92));
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--border, rgba(0,0,0,.08));
+  box-shadow:
+    0 0 0 0.5px rgba(0,0,0,.15),
+    0 10px 30px rgba(0,0,0,.22),
+    0 3px 8px rgba(0,0,0,.12);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  cursor: default;
+}
+
+.toast.toast-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.toast-out {
+  opacity: 0;
+  transform: translateY(8px);
+  transition-duration: 220ms;
+}
+
+/* Kinds — match the rest of the palette */
+.toast-info { /* default — neutral */ }
+
+.toast-ok {
+  border-color: color-mix(in srgb, var(--ok, #34c759) 35%, transparent);
+  background: color-mix(in srgb, var(--ok, #34c759) 12%, var(--pane-vibrant, rgba(28, 28, 36, 0.92)));
+}
+
+.toast-err {
+  border-color: color-mix(in srgb, var(--err, #ff453a) 35%, transparent);
+  background: color-mix(in srgb, var(--err, #ff453a) 12%, var(--pane-vibrant, rgba(28, 28, 36, 0.92)));
+}
+
+:root[data-power-mode="on"] .toast {
+  background: rgba(38, 38, 48, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Undo button — only rendered when flashToast({ undo: fn }) is used. */
+.toast-msg { flex: 1; min-width: 0; }
+.toast-undo {
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+.toast-undo:hover { filter: brightness(1.1); }
+.toast-undo:active { transform: scale(0.96); }

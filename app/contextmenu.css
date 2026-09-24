@@ -1,0 +1,95 @@
+/* app/contextmenu.css — right-click context menu.
+   Native-Mac feel: ~6px corner radius, subtle border, soft shadow,
+   accent-tinted hover. Sized to match Finder/Safari menus on macOS 14. */
+
+.ctxmenu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 4px;
+  background: var(--pane-vibrant, var(--surface, #fff));
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--border, rgba(0,0,0,.08));
+  border-radius: 7px;
+  box-shadow:
+    0 0 0 0.5px rgba(0,0,0,.18),
+    0 16px 40px rgba(0,0,0,.25),
+    0 4px 12px rgba(0,0,0,.15);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text);
+  animation: ctxmenu-pop 80ms ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+}
+@keyframes ctxmenu-pop {
+  0%   { opacity: 0; transform: scale(0.97); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Power-mode (high-contrast dark) adjustments */
+:root[data-power-mode="on"] .ctxmenu {
+  background: rgba(28, 28, 36, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.ctxmenu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: default;
+  line-height: 1.35;
+  gap: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ctxmenu-item.sel,
+.ctxmenu-item:hover:not(.disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+.ctxmenu-item.sel .ctxmenu-shortcut,
+.ctxmenu-item:hover:not(.disabled) .ctxmenu-shortcut {
+  color: rgba(255, 255, 255, 0.85);
+}
+.ctxmenu-item.disabled {
+  color: var(--text-3);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.ctxmenu-item.danger {
+  color: var(--err, #ff453a);
+}
+.ctxmenu-item.danger.sel,
+.ctxmenu-item.danger:hover:not(.disabled) {
+  background: var(--err, #ff453a);
+  color: #fff;
+}
+
+.ctxmenu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ctxmenu-shortcut {
+  flex-shrink: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.2px;
+}
+
+.ctxmenu-divider {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border, rgba(0,0,0,.08));
+}
+:root[data-power-mode="on"] .ctxmenu-divider {
+  background: rgba(255,255,255,.08);
+}

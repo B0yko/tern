@@ -1,0 +1,82 @@
+/* app/indexing.css */
+.indexing-toast {
+  position: fixed;
+  right: 16px; bottom: 16px;
+  width: 360px; max-width: 90vw;
+  background: var(--pane-elevated);
+  border: 0.5px solid var(--pane-border);
+  border-radius: 11px;
+  box-shadow: var(--pane-shadow);
+  padding: 12px;
+  z-index: 90;
+  font-size: 12px;
+}
+.indexing-toast-head {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.indexing-toast-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--accent-tint-30);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.indexing-toast-title { font-weight: 600; font-size: 12.5px; }
+.indexing-toast-bar {
+  height: 4px;
+  background: rgba(0,0,0,.07);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.indexing-toast-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--motion-base);
+}
+.indexing-toast-current { font-size: 11px; color: var(--text-3); margin-bottom: 6px; font-family: var(--font-mono); }
+/* Per-stage sub-progress — color-coded by pipeline step so the user
+   sees at a glance which slow operation is running. Matches the per-
+   source palette: transcribe=blue, ocr=orange, embed/keyframes=green. */
+.indexing-toast-stage {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-left: 2px solid var(--accent);
+}
+.indexing-toast-stage[data-stage="transcribe"] {
+  background: color-mix(in srgb, #0a84ff 10%, transparent);
+  border-left-color: #0a84ff;
+}
+.indexing-toast-stage[data-stage="ocr"] {
+  background: color-mix(in srgb, #ff9500 10%, transparent);
+  border-left-color: #ff9500;
+}
+.indexing-toast-stage[data-stage="embed"],
+.indexing-toast-stage[data-stage="keyframes"] {
+  background: color-mix(in srgb, #34c759 10%, transparent);
+  border-left-color: #34c759;
+}
+.indexing-toast-log {
+  font-size: 10.5px;
+  color: var(--text-3);
+  line-height: 1.4;
+  max-height: 48px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+.indexing-toast-cancel {
+  margin-top: 8px;
+  background: rgba(0,0,0,.06);
+  color: var(--text);
+  border: 0; padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 11px; cursor: pointer;
+  font-family: inherit;
+}

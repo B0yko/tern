@@ -1,0 +1,151 @@
+/* app/empty.css */
+.empty-shell {
+  display: grid;
+  grid-template-columns: minmax(360px, 38%) 1fr;
+  height: 100%;
+  min-height: 0;
+}
+/* Day-N: workspace has files. Library list fills the entire
+ * results-pane width — no marketing panel hogging the middle. */
+.empty-shell.empty-shell--list-only {
+  grid-template-columns: 1fr;
+}
+/* Day-1: workspace is empty. Hero is centered on its own. */
+.empty-shell.empty-shell--hero-only {
+  grid-template-columns: 1fr;
+}
+.empty-list {
+  border-right: 0.5px solid var(--pane-divider);
+  padding: 14px 8px;
+  overflow-y: auto;
+}
+/* When the list takes the full pane, drop the right border (there's
+ * no neighbour to separate from). */
+.empty-shell--list-only .empty-list {
+  border-right: 0;
+}
+.empty-list .row { cursor: pointer; }
+.empty-list-label {
+  font-size: 10px; text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 600; letter-spacing: .6px;
+  padding: 6px 10px 4px;
+}
+/* Day-N library header: count + inline "+ Add folder" affordance.
+ * Without this button the user has no visible way to index a new
+ * folder once the day-N hero was removed — only ⇧⌘O or
+ * opening the sidebar. */
+.empty-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.empty-list-add {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 4px 10px;
+  border: 0.5px solid var(--pane-border);
+  border-radius: var(--btn-radius);
+  background: var(--pane-elevated);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+.empty-list-add:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.empty-hero {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 36px;
+  text-align: center;
+  overflow-y: auto;
+}
+.empty-hero h1 {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 700; line-height: 1.15;
+  margin: 0;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+.empty-hero h1 .accent { color: var(--accent); }
+.empty-hero p {
+  margin: 10px 0 0;
+  color: var(--text-3);
+  max-width: 360px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.empty-pills {
+  margin-top: 20px;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  justify-content: center;
+  max-width: 420px;
+}
+.empty-pill {
+  background: var(--pane-elevated);
+  border: 0.5px solid var(--pane-border);
+  padding: 5px 11px;
+  border-radius: 16px;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all var(--motion-fast);
+}
+.empty-pill:hover { background: var(--accent-tint-12); }
+.empty-cta {
+  margin-top: 22px;
+  background: var(--accent);
+  color: var(--accent-on);
+  border: 0; padding: 9px 16px;
+  border-radius: 8px;
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.empty-cta .kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: rgba(255,255,255,.20);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.empty-privacy {
+  margin-top: 14px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* Live library stats in the empty-state hero */
+.empty-stats {
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--text-3);
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 420px;
+}
+.empty-stat strong { color: var(--text); font-weight: 700; font-feature-settings: "tnum"; }
+.empty-stat-sep { color: var(--text-4); }
+.empty-stat-kinds { display: inline-flex; gap: 6px; margin-left: 6px; }
+.empty-stat-pill {
+  font-size: 10.5px;
+  padding: 1.5px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.empty-stat-audio { background: rgba(10, 132, 255, .14); color: #0a3a78; }
+.empty-stat-video { background: rgba(255, 149, 0, .15);  color: #7a4500; }
+.empty-stat-image { background: rgba(52, 199, 89, .15);  color: #1d6b30; }
+:root[data-appearance="dark"] .empty-stat-audio,
+:root[data-power-mode="on"] .empty-stat-audio { background: rgba(10, 132, 255, .25); color: #b3d4ff; }
+:root[data-appearance="dark"] .empty-stat-video,
+:root[data-power-mode="on"] .empty-stat-video { background: rgba(255, 149, 0, .28);  color: #ffd28b; }
+:root[data-appearance="dark"] .empty-stat-image,
+:root[data-power-mode="on"] .empty-stat-image { background: rgba(52, 199, 89, .25);  color: #b6f3c4; }

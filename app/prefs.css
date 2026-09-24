@@ -1,0 +1,88 @@
+/* app/prefs.css */
+.prefs {
+  font-size: 13px;
+}
+.prefs-title { font-weight: 600; font-size: 13px; margin-bottom: 12px; }
+.prefs-section { margin-bottom: 14px; }
+.prefs-section:last-child { margin-bottom: 0; }
+.prefs-link {
+  background: transparent;
+  border: 0;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+.prefs-link:hover { text-decoration: underline; }
+.prefs-link:active { transform: scale(0.98); }
+.prefs-label {
+  font-size: 10px; color: var(--text-3);
+  font-weight: 600; letter-spacing: .4px; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.prefs-seg {
+  display: inline-flex;
+  background: rgba(0,0,0,.05);
+  border-radius: 7px; padding: 2px; gap: 2px;
+}
+:root[data-power-mode="on"] .prefs-seg { background: rgba(255,255,255,.05); }
+.prefs-seg button {
+  background: transparent; border: 0;
+  padding: 4px 10px;
+  font-family: inherit; font-size: 12px;
+  color: var(--text); cursor: pointer;
+  border-radius: 5px;
+}
+.prefs-seg button.on {
+  background: var(--pane-elevated);
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  font-weight: 500;
+}
+:root[data-power-mode="on"] .prefs-seg button.on { background: rgba(255,255,255,.10); }
+
+.prefs-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+.prefs-swatch {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  border: 0;
+  padding: 0;
+}
+.prefs-swatch.on::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 1.5px solid color-mix(in srgb, currentColor 50%, transparent);
+  border-radius: 50%;
+  color: var(--text);
+}
+
+.prefs-toggle {
+  display: flex; align-items: center; gap: 10px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--pane-divider);
+}
+.prefs-toggle-track {
+  width: 32px; height: 18px;
+  background: rgba(0,0,0,.12);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--motion-fast);
+}
+.prefs-toggle-track.on { background: var(--ok); }
+.prefs-toggle-knob {
+  position: absolute; top: 1.5px; left: 1.5px;
+  width: 15px; height: 15px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,.2);
+  transition: left var(--motion-fast);
+}
+.prefs-toggle-track.on .prefs-toggle-knob { left: 15.5px; }
+.prefs-toggle-text { font-size: 12.5px; font-weight: 500; }
+.prefs-toggle-sub  { font-size: 10.5px; color: var(--text-3); line-height: 1.35; margin-top: 2px; }

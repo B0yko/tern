@@ -1,0 +1,41 @@
+[project]
+name = "tern-service"
+version = "0.1.0"
+description = "Tern — local AI search for podcast & video archives"
+requires-python = ">=3.11"
+dependencies = [
+    "accelerate>=0.30",
+    "chromadb",
+    "click",
+    "ffmpeg-python",
+    "numpy",
+    "pillow",
+    "pillow-heif>=0.18.0",
+    "pydantic",
+    "rich",
+    "sentence-transformers",
+    "sentencepiece>=0.2.1",
+    "silero-vad>=6.2.1",
+    "torch",
+    "torchvision",
+    "tqdm",
+    "watchdog",
+]
+
+[project.scripts]
+tern = "tern.cli:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["tern"]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

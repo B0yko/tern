@@ -1,0 +1,70 @@
+/* app/lightbox.css — fullscreen photo viewer. */
+
+.lightbox-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, .94);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  cursor: zoom-out;
+}
+
+.lb-close {
+  position: absolute; top: 16px; right: 20px;
+  background: rgba(255, 255, 255, .10); color: #fff;
+  border: 0; width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background var(--motion-fast), transform 60ms ease-out;
+}
+.lb-close:hover  { background: rgba(255, 255, 255, .20); }
+.lb-close:active { transform: scale(0.92); }
+
+.lb-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 48px; height: 64px;
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background var(--motion-fast), transform 60ms ease-out;
+}
+.lb-nav:hover  { background: rgba(255, 255, 255, .16); }
+.lb-nav:active { transform: translateY(-50%) scale(0.94); }
+.lb-nav-prev { left: 18px; }
+.lb-nav-next { right: 18px; }
+
+.lb-image-wrap {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 0;
+  max-width: 100%;
+  cursor: default;
+}
+.lb-image-wrap img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .55);
+}
+
+.lb-meta {
+  margin-top: 18px;
+  color: rgba(255, 255, 255, .80);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  display: flex; gap: 14px;
+  cursor: default;
+}
+.lb-file    { font-weight: 600; }
+.lb-counter { opacity: .60; }

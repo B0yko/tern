@@ -1,0 +1,493 @@
+/* app/shell.css — layout and topbar skeleton.
+   Component-specific styles live next to their modules in later tasks. */
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* App scaffold */
+.app {
+  display: grid;
+  grid-template-rows: 60px 1fr;
+  height: 100vh;
+  background: var(--canvas);
+}
+
+/* Topbar
+ *
+ * Left padding is 78px (not 14px) to clear the three macOS traffic-light
+ * window buttons (close / min / max) that the Tauri shell overlays at
+ * the top-left when titleBarStyle = "Overlay" + hiddenTitle = true.
+ * Without it, the sidebar-toggle button + left edge of the search box
+ * sat UNDER the traffic-lights and were both visually clipped and
+ * (top button) un-clickable. macOS standard zone: ~13px from edge ×
+ * 3 buttons × ~12px wide + spacing ≈ 78px. In browser-dev mode there
+ * are no traffic-lights so the 78px is just a bit of extra left
+ * breathing room — harmless. */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px 0 78px;
+  background: var(--pane-vibrant);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid var(--pane-divider);
+  -webkit-app-region: drag;   /* Tauri: drag the window from this band */
+}
+.topbar > * { -webkit-app-region: no-drag; }
+
+.topbar-btn {
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; padding: 0;
+  border-radius: var(--btn-radius);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background var(--motion-fast);
+}
+.topbar-btn:hover { background: rgba(0,0,0,.05); }
+:root[data-power-mode="on"] .topbar-btn:hover { background: rgba(255,255,255,.06); }
+
+.search-wrap {
+  /* Search is THE primary input for the whole app — make it visually
+   * dominant in the topbar. 40px tall + 12-14px font + extra side
+   * padding gives it the prominence of a Spotlight/Raycast input bar,
+   * not a cramped sub-element wedged between buttons. flex:1 still
+   * lets it grow to fill the topbar's available width. */
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 16px;
+  background: var(--pane-elevated);
+  border: 0.5px solid var(--pane-border);
+  border-radius: 10px;
+  transition: box-shadow var(--motion-fast);
+}
+.search-wrap:focus-within {
+  box-shadow: 0 0 0 3px var(--accent-tint-18);
+  border-color: var(--accent);
+}
+.search-icon { display: inline-flex; color: var(--text-3); opacity: .8; flex-shrink: 0; transition: color 150ms ease, transform 150ms ease; }
+/* Subtle pulse during in-flight searches — communicates "Tern is
+   working" without adding a separate spinner element. The class is
+   toggled by modules/topbar.js on state.isSearching change. */
+.search-icon.searching {
+  color: var(--accent);
+  animation: search-icon-pulse 1.1s ease-in-out infinite;
+}
+@keyframes search-icon-pulse {
+  0%, 100% { transform: scale(1);    opacity: 0.7; }
+  50%      { transform: scale(1.15); opacity: 1;   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .search-icon.searching { animation: none; }
+}
+
+/* Active-filter dot on the filter button — added by topbar.js when
+   scope is restricted (any source toggled off OR a folder filter set).
+   Top-right corner anchor; matches the OS notification-badge convention. */
+.search-filters { position: relative; }
+.filter-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--pane-vibrant, var(--canvas));
+}
+#search-input {
+  flex: 1;
+  border: 0; outline: 0;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+}
+#search-input::placeholder { color: var(--text-3); }
+.search-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  font-feature-settings: "tnum";
+}
+.search-count-n {
+  /* The big number is monospace, slightly de-emphasized so the colored
+     per-source pills draw the eye when present. */
+  color: var(--text-3);
+}
+.search-count-pill {
+  /* One per source kind (speech / on-screen / visual) — colored dot +
+     mono count inside a pill. CSS var --c is set inline to the source's
+     accent color so all 3 fit in one rule. */
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent);
+  color: var(--c, var(--accent));
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-feature-settings: "tnum";
+  line-height: 1.3;
+}
+.search-count-pill::before {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--c, var(--accent));
+}
+.search-hotkey {
+  display: inline-flex; gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.search-hotkey kbd {
+  background: rgba(0,0,0,.07);
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-family: inherit;
+}
+:root[data-power-mode="on"] .search-hotkey kbd { background: rgba(255,255,255,.08); }
+
+/* Search-scope filter button (inside .search-wrap, before .search-hotkey) */
+.search-filters {
+  background: transparent;
+  border: 0;
+  padding: 2px 4px;
+  display: inline-flex; align-items: center;
+  color: var(--text-3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+.search-filters:hover { background: rgba(0,0,0,.06); color: var(--text); }
+:root[data-power-mode="on"] .search-filters:hover { background: rgba(255,255,255,.06); color: var(--text); }
+
+/* Scope-filter popover (rendered by modules/filters.js) */
+.filter-title {
+  display: flex; align-items: center;
+  font-size: 11px; color: var(--text-3);
+  font-weight: 600; letter-spacing: .4px; text-transform: uppercase;
+  padding: 0 4px 8px;
+}
+.filter-reset {
+  margin-left: auto;
+  background: transparent; border: 0;
+  color: var(--accent);
+  font-size: 11px; font-weight: 500;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.filter-reset:hover { background: var(--accent-tint-12); }
+.filter-list { display: flex; flex-direction: column; gap: 2px; }
+.filter-item {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+  transition: background var(--motion-fast);
+}
+.filter-item:hover { background: rgba(0,0,0,.04); }
+:root[data-power-mode="on"] .filter-item:hover { background: rgba(255,255,255,.04); }
+.filter-item.off { opacity: .55; }
+.filter-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+.filter-label { font-weight: 600; font-size: 13px; }
+.filter-hint {
+  grid-column: 2 / 3;
+  grid-row: 2;
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: -2px;
+}
+.filter-check {
+  grid-column: 3; grid-row: 1 / span 2;
+  color: var(--accent);
+}
+
+/* Workspace = 2-pane or 3-pane grid (sidebar.js toggles the data-open attr) */
+.workspace {
+  display: grid;
+  grid-template-columns: 0 minmax(380px, 44%) 1fr;
+  min-height: 0;  /* allow inner overflow */
+  transition: grid-template-columns var(--motion-base);
+}
+#sidebar[data-open="true"] ~ ::before { /* not used */ }
+.workspace:has(#sidebar[data-open="true"]) {
+  grid-template-columns: 200px minmax(360px, 38%) 1fr;
+}
+
+/* Panes */
+.sidebar, .results-pane, .detail-pane {
+  min-height: 0;
+  overflow: hidden;
+}
+.sidebar {
+  border-right: 0.5px solid var(--pane-divider);
+  background: var(--pane-vibrant);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+#sidebar[data-open="false"] { border-right: 0; }
+.results-pane {
+  border-right: 0.5px solid var(--pane-divider);
+  background: var(--pane);
+  display: flex; flex-direction: column;
+}
+.detail-pane {
+  background: var(--pane);
+  display: flex; flex-direction: column;
+}
+
+/* Backend-down banner */
+.api-banner {
+  position: fixed;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 14px;
+  background: var(--err);
+  color: #fff;
+  border-radius: 8px;
+  box-shadow: var(--pane-shadow);
+  font-size: 12.5px;
+}
+.api-banner-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+.api-banner-retry {
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  border: 0; padding: 3px 9px;
+  border-radius: 5px;
+  font-family: inherit; font-size: 12px;
+  cursor: pointer;
+}
+
+/* Drop overlay */
+.drop-overlay {
+  position: fixed; inset: 0;
+  background: var(--accent-tint-18);
+  backdrop-filter: blur(4px);
+  z-index: 80;
+  display: flex; align-items: center; justify-content: center;
+}
+.drop-overlay-inner {
+  background: var(--pane-elevated);
+  padding: 28px 32px;
+  border-radius: 14px;
+  text-align: center;
+  border: 1px dashed var(--accent);
+}
+.drop-overlay h2 { margin: 12px 0 4px; font-size: 18px; }
+.drop-overlay p { margin: 0; color: var(--text-3); font-size: 13px; }
+
+/* Modal + sheet primitives */
+.modal-overlay, .sheet-overlay, .popover {
+  position: fixed; z-index: 200;
+}
+.modal-overlay { inset: 0; background: rgba(0,0,0,.30); display: flex; align-items: center; justify-content: center; }
+.modal { background: var(--pane-elevated); border-radius: 12px; padding: 0; width: 480px; max-width: 92vw; box-shadow: 0 30px 80px rgba(0,0,0,.30); }
+.modal-header { display: flex; align-items: center; padding: 14px 16px; border-bottom: 0.5px solid var(--pane-divider); }
+.modal-header h2 { margin: 0; font-size: 14px; flex: 1; }
+.modal-body { padding: 14px 16px; font-size: 13px; line-height: 1.5; color: var(--text-2); }
+.modal-body label { display: block; font-size: 11px; color: var(--text-3); font-weight: 600; margin: 10px 0 4px; }
+.modal-body textarea, .modal-body input[type=text] {
+  width: 100%; padding: 8px 10px;
+  background: rgba(0,0,0,.04);
+  border: 0.5px solid var(--pane-border);
+  border-radius: 6px;
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--text);
+}
+:root[data-power-mode="on"] .modal-body textarea,
+:root[data-power-mode="on"] .modal-body input[type=text] { background: rgba(255,255,255,.05); }
+.modal-footer { padding: 12px 16px; border-top: 0.5px solid var(--pane-divider); display: flex; gap: 8px; justify-content: flex-end; }
+.btn {
+  background: rgba(0,0,0,.06);
+  color: var(--text);
+  border: 0; padding: 6px 12px;
+  border-radius: var(--btn-radius);
+  font-family: inherit; font-size: 12.5px;
+  cursor: pointer;
+}
+.btn.primary { background: var(--accent); color: var(--accent-on); font-weight: 500; }
+.folder-actions { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.folder-hint { font-size: 11px; color: var(--text-3); }
+.folder-error { margin-top: 8px; color: var(--err); font-size: 12px; }
+
+.popover {
+  background: var(--pane-elevated);
+  border: 0.5px solid var(--pane-border);
+  border-radius: 11px;
+  box-shadow: var(--pane-shadow);
+  padding: 14px;
+  width: 300px;
+}
+
+.sheet-overlay { inset: 0; background: rgba(0,0,0,.30); display: flex; align-items: center; justify-content: center; }
+
+/* Slide-over sidebar at narrow widths */
+@media (max-width: 1099px) {
+  .workspace:has(#sidebar[data-open="true"]) {
+    grid-template-columns: 0 minmax(380px, 44%) 1fr;  /* sidebar overlays */
+  }
+  .sidebar[data-open="true"] {
+    position: fixed;
+    top: 50px; bottom: 0; left: 0;
+    width: 220px;
+    z-index: 50;
+    box-shadow: 4px 0 24px rgba(0,0,0,.18);
+  }
+}
+
+/* Keyboard help overlay (⌘/) */
+.keyhelp-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.40);
+  backdrop-filter: blur(4px);
+  z-index: 220;
+  display: flex; align-items: center; justify-content: center;
+  padding: 36px;
+}
+.keyhelp-card {
+  background: var(--pane-elevated);
+  border-radius: 12px;
+  padding: 22px 24px;
+  width: 540px; max-width: 92vw; max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 80px rgba(0,0,0,.35);
+}
+.keyhelp-head { display: flex; align-items: center; margin-bottom: 14px; }
+.keyhelp-head h2 { margin: 0; font-size: 16px; font-family: var(--font-display); letter-spacing: -0.2px; }
+.keyhelp-close { margin-left: auto; background: transparent; border: 0; font-size: 16px; color: var(--text-3); cursor: pointer; padding: 4px 8px; border-radius: 5px; }
+.keyhelp-close:hover { background: rgba(0,0,0,.06); color: var(--text); }
+:root[data-power-mode="on"] .keyhelp-close:hover { background: rgba(255,255,255,.06); }
+.keyhelp-body { display: flex; flex-direction: column; gap: 18px; }
+.keyhelp-group-label { font-size: 10px; color: var(--text-3); font-weight: 600; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 4px; }
+.keyhelp-row { display: flex; align-items: center; gap: 12px; padding: 5px 0; }
+.keyhelp-keys { display: inline-flex; gap: 3px; min-width: 96px; }
+.keyhelp-keys kbd {
+  background: rgba(0,0,0,.07);
+  border-radius: 4px;
+  padding: 1.5px 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+:root[data-power-mode="on"] .keyhelp-keys kbd { background: rgba(255,255,255,.08); }
+.keyhelp-label { color: var(--text-2); font-size: 13px; line-height: 1.4; flex: 1; }
+
+/* Search-input suggestions dropdown (modules/suggest.js) */
+.suggest-dropdown {
+  background: var(--pane-elevated);
+  border: 0.5px solid var(--pane-border);
+  border-radius: 9px;
+  box-shadow: var(--pane-shadow);
+  padding: 4px;
+  z-index: 60;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.suggest-item {
+  background: transparent;
+  border: 0;
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--motion-fast);
+}
+.suggest-item.on,
+.suggest-item:hover { background: var(--accent-tint-12); color: var(--accent); }
+.suggest-glyph { display: inline-flex; color: var(--text-3); width: 12px; }
+.suggest-item.on .suggest-glyph,
+.suggest-item:hover .suggest-glyph { color: var(--accent); }
+.suggest-text { flex: 1; }
+.suggest-hits {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-4);
+  font-feature-settings: "tnum";
+}
+
+/* Per-folder filter inside the scope popover */
+.filter-folder {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--pane-divider);
+}
+.filter-section-label {
+  font-size: 10px;
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  padding: 0 4px;
+}
+.filter-folder-select {
+  width: 100%;
+  background: rgba(0,0,0,.04);
+  border: 0.5px solid var(--pane-border);
+  border-radius: 6px;
+  padding: 6px 9px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+:root[data-power-mode="on"] .filter-folder-select { background: rgba(255,255,255,.05); }
+
+/* About section inside the keyhelp overlay */
+.keyhelp-about {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 0.5px solid var(--pane-divider);
+  text-align: center;
+}
+.keyhelp-about-row {
+  display: flex; justify-content: center; align-items: center;
+  gap: 8px; flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.keyhelp-about-row a { color: var(--accent); text-decoration: none; }
+.keyhelp-about-row a:hover { text-decoration: underline; }
+.keyhelp-about-sep { opacity: .45; }
+.keyhelp-about-sub { font-size: 10.5px; opacity: .75; margin-top: 4px; }

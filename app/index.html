@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--
+  Content-Security-Policy. Defense in depth on top of the _esc()
+  XSS audit: if a future regression sneaks user-controlled HTML past the
+  escape helpers, this policy still blocks the dangerous follow-up:
+
+    - script-src 'self'      — no inline <script>, no eval, no remote
+                                .js. Stops the "load attacker.com/x.js"
+                                escalation from any successful XSS.
+    - object-src 'none'      — no <object>/<embed>/Flash escape hatch.
+    - base-uri 'self'        — defeats <base href="…"> rebasing tricks.
+    - frame-ancestors 'none' — Tern can never be iframed, period
+                                (clickjacking class).
+    - default-src 'self'     — everything not separately listed is
+                                same-origin (http://127.0.0.1:<port>).
+    - img-src / media-src include data: + blob: so canvas snapshots and
+      audio-decode blobs continue to work; both fully covered by 'self'
+      for the /api/file render path.
+    - style-src 'unsafe-inline' is required — the JS modules use inline
+      `style="…"` attributes heavily for layout math (trim handles,
+      positioning). Removing this would need a substantial rewrite.
+
+  Fonts (Inter / Inter Tight / JetBrains Mono) are now bundled locally
+  under /fonts/ — see fonts.css below. Tern never talks to Google on
+  launch; the policy can stay strictly 'self' for both style-src and
+  font-src.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+<title>Tern — Local AI search</title>
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/shell.css">
+<link rel="stylesheet" href="/row.css">
+<link rel="stylesheet" href="/results.css">
+<link rel="stylesheet" href="/detail.css">
+<link rel="stylesheet" href="/player.css?v=vtrim2">
+<link rel="stylesheet" href="/transcript.css">
+<link rel="stylesheet" href="/empty.css">
+<link rel="stylesheet" href="/sidebar.css">
+<link rel="stylesheet" href="/prefs.css">
+<link rel="stylesheet" href="/indexing.css">
+<link rel="stylesheet" href="/onboarding.css">
+<link rel="stylesheet" href="/lightbox.css">
+<link rel="stylesheet" href="/motion.css">
+<link rel="stylesheet" href="/contextmenu.css">
+<link rel="stylesheet" href="/toast.css">
+</head>
+<body>
+
+<!-- Banner: backend-down warning. modules/api.js + main app reveal/hide. -->
+<div class="api-banner" id="api-banner" hidden>
+  <span class="api-banner-dot"></span>
+  <span>Tern backend isn't responding.</span>
+  <button class="api-banner-retry" id="api-banner-retry">Retry</button>
+</div>
+
+<!-- Drag-drop overlay shown when user drags a folder over the window. -->
+<div class="drop-overlay" id="drop-overlay" hidden>
+  <div class="drop-overlay-inner">
+    <span class="drop-icon" id="drop-icon"></span>
+    <h2>Drop to index this folder</h2>
+    <p>Tern will scan it for audio, video and photos — locally on your Mac.</p>
+  </div>
+</div>
+
+<div class="app" id="app">
+
+  <!-- Topbar: ⌘B toggle · search · gear -->
+  <header class="topbar">
+    <button class="topbar-btn" id="btn-toggle-sidebar" title="Toggle sidebar (⌘B)" aria-label="Toggle sidebar">
+      <span id="icon-sidebar"></span>
+    </button>
+
+    <div class="search-wrap" role="search">
+      <span class="search-icon" id="icon-search"></span>
+      <input type="text" id="search-input"
+             placeholder="Find any moment…"
+             aria-label="Search across video, audio and photo archive"
+             maxlength="2000"
+             autocomplete="off" autocorrect="off" spellcheck="false">
+      <span class="search-count" id="search-count" hidden></span>
+      <button class="search-filters" id="btn-filters" title="Search scope" aria-label="Search scope" hidden>
+        <span id="icon-filters"></span>
+      </button>
+      <span class="search-hotkey"><kbd>⌘</kbd><kbd>K</kbd></span>
+    </div>
+
+    <button class="topbar-btn" id="btn-save-search" title="Save this search (⌘D)" aria-label="Save this search" hidden>
+      <span id="icon-star"></span>
+    </button>
+
+    <button class="topbar-btn" id="btn-keyhelp" title="Keyboard shortcuts (⌘/)" aria-label="Keyboard shortcuts">
+      <span id="icon-keyhelp"></span>
+    </button>
+
+    <button class="topbar-btn" id="btn-prefs" title="Preferences (⌘,)" aria-label="Preferences">
+      <span id="icon-gear"></span>
+    </button>
+  </header>
+
+  <!-- 3-pane workspace -->
+  <div class="workspace">
+
+    <aside class="sidebar" id="sidebar" data-open="false">
+      <!-- modules/sidebar.js mounts here -->
+    </aside>
+
+    <section class="results-pane" id="results-pane" role="region" aria-label="Search results">
+      <!-- modules/results.js mounts the result list here -->
+      <!-- modules/empty.js mounts the empty state here when query is "" -->
+    </section>
+
+    <section class="detail-pane" id="detail-pane" role="region" aria-label="Result detail">
+      <!-- modules/detail.js mounts here -->
+    </section>
+
+  </div>
+
+  <!-- Indexing toast -->
+  <div class="indexing-toast" id="indexing-toast" hidden>
+    <!-- modules/indexing.js fills this on /api/index/status updates -->
+  </div>
+
+</div>
+
+<!-- Preferences popover. modules/prefs.js mounts here. -->
+<div class="popover" id="prefs-popover" hidden></div>
+
+<!-- Filter scope popover. modules/filters.js mounts here. -->
+<div class="popover" id="filter-popover" hidden></div>
+
+<!-- Add-folder modal. Reused from legacy; modules/sidebar.js opens it. -->
+<div class="modal-overlay" id="folder-modal" hidden>
+  <div class="modal">
+    <header class="modal-header">
+      <h2>Index a folder</h2>
+      <button class="topbar-btn" id="btn-close-folder-modal" aria-label="Close"><span id="icon-close-1"></span></button>
+    </header>
+    <div class="modal-body">
+      <p>Point Tern at a folder of audio, video, or photo files. Tern transcribes speech, OCRs on-screen text, and embeds visuals — locally on your Mac.</p>
+      <label for="folder-path">Folder path(s)</label>
+      <textarea id="folder-path" rows="3" placeholder="/Users/you/Documents/My_Show
+/Volumes/External_SSD/Recordings" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+      <div class="folder-actions">
+        <button class="btn" id="btn-browse-folder" type="button">Browse…</button>
+        <span class="folder-hint">…or paste an absolute path. In Finder: right-click → <em>Copy as Pathname</em>.</span>
+      </div>
+      <div id="folder-error" class="folder-error" hidden></div>
+    </div>
+    <footer class="modal-footer">
+      <button class="btn" id="btn-cancel-folder">Cancel</button>
+      <button class="btn primary" id="btn-start-indexing">Start indexing</button>
+    </footer>
+  </div>
+</div>
+
+<!-- Onboarding sheet (modules/onboarding.js mounts here on first launch). -->
+<div class="sheet-overlay" id="onboarding-sheet" hidden></div>
+
+<!-- Fullscreen photo viewer (modules/lightbox.js mounts here). -->
+<div class="lightbox-overlay" id="lightbox-overlay" hidden></div>
+
+<!-- License-key activation modal (modules/license.js mounts here). -->
+<div class="modal-overlay" id="license-modal" hidden></div>
+
+<!-- Keyboard-shortcuts overlay (⌘/). modules/keyhelp.js mounts here. -->
+<div class="keyhelp-overlay" id="keyhelp-overlay" hidden></div>
+
+<script type="module" src="/main.js"></script>
+</body>
+</html>

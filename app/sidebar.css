@@ -1,0 +1,184 @@
+/* app/sidebar.css */
+.sb {
+  display: flex; flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.sb-head { padding: 12px 14px 8px; }
+.sb-logo {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13.5px; font-weight: 600;
+  color: var(--text);
+}
+.sb-logo span.bird { color: var(--accent); display: inline-flex; }
+.sb-logo .fm { color: var(--text-3); font-weight: 400; }
+.sb-stats {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  margin-top: 4px;
+  font-feature-settings: "tnum";
+}
+
+.sb-sec { padding: 8px 6px 4px; }
+/* Per-section scroller — only the bookmark list uses it today. Without
+   it, a power user who pinned 30+ moments via ⌘⇧B saw the first 6 in
+   the sidebar and had no path to bookmarks 7-N (the slice cap rendered
+   them, no scroll, no "show all" affordance) — the count badge
+   advertised them but they were inaccessible. The sidebar's parent
+   (.sidebar) is overflow:hidden so the list HAS to scroll within its
+   own section; without max-height it would push Saved + Recent below
+   the visible viewport. The label stays outside the scroller so the
+   "Bookmarks (30)" header stays visible while the user scrolls
+   through their pins. 240px ≈ 10 rows, the breakpoint where adding
+   the scrollbar costs nothing vs. the alternative of losing rows
+   silently. */
+.sb-sec-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+}
+.sb-sec-label {
+  display: flex; align-items: center;
+  font-size: 9.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .6px;
+  color: var(--text-4);
+  padding: 4px 8px;
+}
+.sb-sec-add {
+  margin-left: auto;
+  width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  border-radius: 3px; cursor: pointer;
+}
+.sb-sec-add:hover { background: var(--accent-tint-12); }
+/* Count badge in section labels — shows total when the section is
+   truncated (Bookmarks > 6, Saved > 8). Previously a user with
+   30 bookmarks saw the same "Bookmarks" label as a user with 6, and
+   had no in-app cue that 24 more were hidden below the visible list.
+   The badge sits right of the label text via auto-left margin so the
+   label flush stays clean. Mono font + tnum numerics so 8 / 12 / 99
+   render same-width without text-jitter when the count updates. */
+.sb-sec-count {
+  margin-left: auto;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text-4) 18%, transparent);
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: 0;
+}
+
+.sb-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background var(--motion-fast);
+}
+.sb-row:hover { background: rgba(0,0,0,.04); }
+:root[data-power-mode="on"] .sb-row:hover { background: rgba(255,255,255,.05); }
+.sb-row.active { background: var(--accent-tint-12); color: var(--accent); }
+.sb-row-glyph {
+  width: 13px; height: 13px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.sb-row.active .sb-row-glyph { color: var(--accent); }
+.sb-row-text {
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-row-meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-4);
+  font-feature-settings: "tnum";
+}
+
+/* Saved rows — star glyph in accent + remove-on-hover X */
+.sb-row-saved .sb-row-glyph { color: var(--accent); opacity: 1; }
+.sb-row-remove {
+  background: transparent;
+  border: 0; padding: 2px;
+  color: var(--text-4);
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: opacity var(--motion-fast), background var(--motion-fast);
+}
+.sb-row-saved:hover .sb-row-remove,
+.sb-row-folder:hover .sb-row-remove { opacity: 1; }
+.sb-row-remove:hover { background: rgba(0,0,0,.08); color: var(--err); }
+:root[data-power-mode="on"] .sb-row-remove:hover { background: rgba(255,255,255,.08); }
+
+.sb-foot {
+  margin-top: auto;
+  padding: 8px 10px 12px;
+  border-top: 0.5px solid var(--pane-divider);
+}
+.sb-license {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px;
+  background: rgba(0,0,0,.04);
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: var(--text);
+  cursor: pointer;
+}
+:root[data-power-mode="on"] .sb-license { background: rgba(255,255,255,.04); }
+.sb-license-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-4); }
+.sb-license-dot.active { background: var(--ok); }
+.sb-license-dot.trial  { background: var(--text-4); }
+.sb-license-version { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-3); }
+/* Trial-mode action hint. Previously the sidebar badge said just
+   "Trial mode" with a grey dot — a passive status indicator that most
+   users didn't realize was clickable, never mind that the click opens
+   the licence modal. Surfacing "· Activate" in the accent color
+   reframes the badge as the action it actually is: tap to enter a
+   key or request one. The accent tint stays light enough not to
+   compete with the main "Trial mode" label, but visible enough to
+   draw the eye toward the affordance. Licensed users see the plain
+   "Licensed" text unchanged, so the cue only shows while the app is
+   still in trial mode. */
+.sb-license-cta {
+  color: var(--accent);
+  font-weight: 500;
+}
+.sb-privacy {
+  margin-top: 8px;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: var(--text-3);
+  line-height: 1.4;
+  display: flex; gap: 6px; align-items: flex-start;
+}
+.sb-privacy strong { color: var(--text); }
+.sb-privacy-icon { color: var(--ok); flex-shrink: 0; margin-top: 1px; }
+
+/* License footer becomes a clickable button (was a div) — keep same look */
+.sb-license { width: 100%; border: 0; font-family: inherit; }
+.sb-license:hover { background: rgba(0,0,0,.06); }
+:root[data-power-mode="on"] .sb-license:hover { background: rgba(255,255,255,.06); }
+
+/* License modal state blocks */
+.license-state { padding: 10px 12px; border-radius: 8px; }
+.license-state-active { background: color-mix(in srgb, var(--ok) 12%, transparent); border: 0.5px solid color-mix(in srgb, var(--ok) 30%, transparent); }
+.license-state-trial  { background: rgba(0,0,0,.04); border: 0.5px solid var(--pane-border); }
+:root[data-power-mode="on"] .license-state-trial { background: rgba(255,255,255,.04); }
+.license-state-badge { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.license-state-meta { font-size: 12.5px; color: var(--text-2); }
+.license-dot-on { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.license-dot-off { width: 8px; height: 8px; border-radius: 50%; background: var(--text-4); }
+
+/* Bookmark rows (per-moment pins, distinct from Saved which are queries) */
+.sb-row-bookmark .sb-row-glyph { color: var(--mark); opacity: 1; }
+.sb-row-bookmark:hover .sb-row-remove { opacity: 1; }

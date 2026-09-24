@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    # Both Python suites from one environment: api/uv.lock installs the API
+    # and, as an editable path dependency, service_pipeline.
+    #
+    # No ML models and no ffmpeg / whisper-cli here. Tests that need the
+    # SigLIP-2 weights, those binaries, or an indexed demo workspace skip
+    # with the reason; everything else runs. HF_HUB_OFFLINE makes sure a
+    # missing model is a skip, not a 1.5 GB download.
+    name: python
+    runs-on: macos-14
+    timeout-minutes: 30
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.9"
+          enable-cache: true
+          cache-dependency-glob: api/uv.lock
+
+      - name: Install Python 3.11
+        run: uv python install 3.11
+
+      - name: Install dependencies (lockfile must be current)
+        working-directory: api
+        run: uv sync --locked --python 3.11
+
+      - name: Check service_pipeline/uv.lock is current
+        working-directory: service_pipeline
+        run: uv lock --check
+
+      - name: service_pipeline tests
+        working-directory: service_pipeline
+        run: PYTHONPATH="$PWD" ../api/.venv/bin/python -m pytest -q -p no:cacheprovider -rs
+
+      - name: api tests
+        working-directory: api
+        env:
+          # Keep the API off the repo's demo/ directory: an empty workspace
+          # in the runner's temp dir.
+          TERN_WORKSPACE: ${{ runner.temp }}/tern-workspace
+        run: |
+          mkdir -p "$TERN_WORKSPACE"
+          .venv/bin/python -m pytest -q -p no:cacheprovider -rs
+
+      - name: Compile the Vision OCR sidecar
+        run: swiftc -O service_pipeline/bin/vision-ocr.swift -o "$RUNNER_TEMP/vision-ocr"
+
+  licence-server:
+    # Seat and expiry rules of the licence edge function. Pure logic, no
+    # database.
+    name: licence-server
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: deno test
+        run: deno test license_server/decide_test.ts
+
+  tauri:
+    # Compile check of the desktop shell. A real bundle needs the Python
+    # runtime, models and ffmpeg in resources/ (scripts/prepare_bundle.sh)
+    # and a signing identity, so it is not built here.
+    name: tauri
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tauri/src-tauri
+
+      - name: cargo check
+        working-directory: tauri/src-tauri
+        run: cargo check --locked

@@ -1,0 +1,29 @@
+[project]
+name = "tern-api"
+version = "0.1.0"
+description = "Tern — local HTTP API (FastAPI) behind the desktop app"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.136.1",
+    "pydantic>=2.13.4",
+    "python-multipart>=0.0.29",
+    "tern-service",
+    "uvicorn[standard]>=0.47.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",  # required by fastapi.testclient
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+asyncio_mode = "strict"
+
+[tool.uv.sources]
+# service_pipeline is an editable path dependency, so one environment
+# (api/.venv) runs the API and both test suites.
+tern-service = { path = "../service_pipeline", editable = true }

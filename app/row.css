@@ -1,0 +1,182 @@
+/* app/row.css — result-row component. */
+.row {
+  display: flex; gap: 11px; align-items: center;
+  padding: 6px 10px;
+  margin: 0 6px;
+  height: var(--row-h);
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background var(--motion-fast);
+  position: relative; /* anchor for absolute hover-actions positioning */
+}
+.row:hover { background: rgba(0,0,0,.035); }
+:root[data-power-mode="on"] .row:hover { background: rgba(255,255,255,.04); }
+.row.sel { background: var(--accent-tint-12); }
+.row.sel .row-name { color: var(--accent); }
+
+/* Hover-action buttons (Reveal · Bookmark · More) — only appear on
+   row hover. Power-user shortcut so the user doesn't need right-click
+   for the most common ops. */
+.row-hover-actions {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 6px;
+  background: var(--pane-elevated, rgba(255,255,255,0.85));
+  box-shadow: 0 1px 6px rgba(0,0,0,.10), 0 0 0 0.5px rgba(0,0,0,.06);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+.row:hover .row-hover-actions,
+.row.sel  .row-hover-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.row-hover-btn {
+  background: transparent;
+  border: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 90ms ease, color 90ms ease;
+}
+.row-hover-btn:hover {
+  background: var(--accent-tint-12);
+  color: var(--accent);
+}
+.row-hover-btn:active { transform: scale(0.92); }
+:root[data-power-mode="on"] .row-hover-actions {
+  background: rgba(38, 38, 48, 0.95);
+  box-shadow: 0 1px 6px rgba(0,0,0,.4), 0 0 0 0.5px rgba(255,255,255,.06);
+}
+
+/* Bookmark indicator — paired with the row.js className hook from
+   commit ea89cea. The hover-action star icon flips outline → filled
+   for bookmarked rows, but row-hover-actions only fades in on
+   :hover/.sel, so a user scanning a long result list has no
+   at-a-glance bookmark cue. This 3 px accent strip on the row's
+   left edge (in the warm "mark" color used elsewhere for snap
+   indicators + match markers) is visible at all times, so a quick
+   scan of the results list immediately surfaces which moments
+   are pinned. Subtle enough not to compete with sel state's
+   accent-tint background; bold enough to spot in a list of 30. */
+.row.row-bookmarked::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  background: var(--mark, #facc15);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.row-thumb {
+  width: var(--thumb-size); height: var(--thumb-size);
+  border-radius: var(--thumb-radius);
+  overflow: hidden; position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), inset 0 0 0 0.5px rgba(0,0,0,.04);
+  display: flex; align-items: center; justify-content: center;
+}
+.row-thumb.audio {
+  background: linear-gradient(135deg, var(--accent-tint-12), var(--accent-tint-30));
+  color: var(--accent);
+}
+.row-thumb.video {
+  background: linear-gradient(160deg, #2a4670, #1f2e48);
+  color: rgba(255,255,255,.92);
+}
+.row-thumb.image-fallback {
+  background: linear-gradient(135deg, #fff1e0, #ffd9b1);
+  color: #a3580a;
+}
+.row-thumb.image-real {
+  background-size: cover;
+  background-position: center;
+}
+.row-thumb-overlay {
+  position: absolute; bottom: 4px; left: 4px; right: 4px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  pointer-events: none;
+}
+.row-thumb-play {
+  width: 14px; height: 14px;
+  background: rgba(0,0,0,.55);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+.row-thumb-tc {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: #fff;
+  background: rgba(0,0,0,.55);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.row-title { display: flex; align-items: baseline; gap: 6px; }
+.row-name { font-weight: 600; font-size: 13px; }
+.row-pill {
+  font-size: 10px;
+  padding: 1.5px 6px;
+  border-radius: var(--pill-radius);
+  font-weight: 600; letter-spacing: .4px; text-transform: uppercase;
+  background: rgba(0,0,0,.06);
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+:root[data-power-mode="on"] .row-pill { background: rgba(255,255,255,.06); color: var(--text-2); }
+.row-pill.multi { background: var(--accent-tint-12); color: var(--accent); }
+/* Per-source pill tints — same palette as filter popover + count chips
+   (speech #0a84ff, on-screen #ff9500, visual #34c759). color-mix lets a
+   single declaration handle both light and dark surfaces. The .multi
+   override above already covers the multi-source case. */
+.row-pill[data-source="transcript"]:not(.multi) {
+  background: color-mix(in srgb, #0a84ff 14%, transparent);
+  color: #0a84ff;
+}
+.row-pill[data-source="ocr"]:not(.multi) {
+  background: color-mix(in srgb, #ff9500 14%, transparent);
+  color: #ff9500;
+}
+.row-pill[data-source="visual"]:not(.multi) {
+  background: color-mix(in srgb, #34c759 16%, transparent);
+  color: #1f8e3d; /* darker green for AA contrast on light pill bg */
+}
+:root[data-power-mode="on"] .row-pill[data-source="visual"]:not(.multi) {
+  color: #34c759;
+}
+.row-ts {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  margin-left: auto;
+  font-feature-settings: "tnum";
+}
+.row-snip {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row-snip mark      { background: var(--mark);     color: var(--mark-on); padding: 0 3px; border-radius: 2px; font-weight: 600; }
+.row.sel .row-snip mark { background: var(--mark); color: var(--mark-on); }
+.row:not(.sel) .row-snip mark { background: var(--mark-dim); color: var(--mark-on); font-weight: 500; }

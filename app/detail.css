@@ -1,0 +1,125 @@
+/* app/detail.css */
+.detail {
+  display: flex; flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.detail-empty {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.detail-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 16px;
+  border-bottom: 0.5px solid var(--pane-divider);
+  background: var(--pane-elevated);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  flex-wrap: wrap;
+}
+.detail-badge {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  background: var(--accent); color: var(--accent-on);
+  padding: 2px 7px; border-radius: var(--pill-radius);
+}
+/* Per-source badge color — matches row pill + topbar breakdown chip.
+   See row.css for palette source. multi keeps the accent-tinted default. */
+.detail-badge[data-source="transcript"] { background: #0a84ff; color: #fff; }
+.detail-badge[data-source="ocr"]        { background: #ff9500; color: #fff; }
+.detail-badge[data-source="visual"]     { background: #34c759; color: #fff; }
+.detail-tc {
+  font-family: var(--font-mono);
+  font-size: 11.5px; color: var(--text-2);
+  font-feature-settings: "tnum";
+}
+.detail-file { font-size: 12.5px; font-weight: 500; }
+.detail-nav-hint {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+.detail-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+.detail-actions {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  padding: 11px 14px;
+  border-top: 0.5px solid var(--pane-divider);
+  background: var(--pane-elevated);
+}
+.detail-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(0,0,0,.06);
+  color: var(--text);
+  border: 0; padding: 5px 10px;
+  border-radius: var(--btn-radius);
+  font-size: 12px; font-family: inherit;
+  cursor: pointer;
+  transition: background var(--motion-fast);
+}
+:root[data-power-mode="on"] .detail-btn { background: rgba(255,255,255,.06); }
+.detail-btn:hover { background: rgba(0,0,0,.10); }
+:root[data-power-mode="on"] .detail-btn:hover { background: rgba(255,255,255,.10); }
+.detail-btn.primary { background: var(--accent); color: var(--accent-on); font-weight: 500; }
+.detail-btn.primary:hover { filter: brightness(1.08); }
+.detail-btn .kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: .55;
+  margin-left: 3px;
+}
+.detail-btn.ghost { background: transparent; }
+.detail-overflow { margin-left: auto; }
+
+/* Overflow menu styling deleted in this refactor — detail.js now uses
+   the shared contextmenu.js system (showContextMenu) so the ⋯ menu
+   inherits .ctxmenu styling from contextmenu.css. Single source of
+   truth for popover styling across the app. */
+
+/* EXIF chips for photo hits (date, camera, dims, GPS) */
+.exif-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--pane-divider);
+}
+.exif-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.05);
+  color: var(--text-2);
+  font-family: var(--font-ui);
+}
+:root[data-power-mode="on"] .exif-chip { background: rgba(255,255,255,.06); }
+
+/* Bookmark star in detail header */
+.detail-bookmark {
+  background: transparent; border: 0;
+  color: var(--text-3);
+  padding: 4px 6px; border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex; align-items: center;
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+.detail-bookmark:hover { background: rgba(0,0,0,.06); color: var(--text); }
+:root[data-power-mode="on"] .detail-bookmark:hover { background: rgba(255,255,255,.06); }
+.detail-bookmark.on { color: var(--mark); }
+.detail-bookmark.on:hover { color: var(--mark); background: color-mix(in srgb, var(--mark) 18%, transparent); }
+/* Subtle pop animation when bookmark is toggled on — class added by
+   detail.js click handler, removed after the keyframes finish so a
+   re-click triggers it again. */
+.detail-bookmark.just-toggled svg {
+  animation: bookmark-pop 280ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes bookmark-pop {
+  0%   { transform: scale(1);   }
+  40%  { transform: scale(1.35); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1);   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail-bookmark.just-toggled svg { animation: none; }
+}

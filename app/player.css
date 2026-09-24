@@ -1,0 +1,717 @@
+/* app/player.css */
+.player {
+  padding: 12px 16px 8px;
+}
+.player-audio {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--pane-elevated);
+  border: 0.5px solid var(--pane-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.player-audio audio { display: none; } /* hidden native control; we render our own */
+.player-play {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent); color: var(--accent-on);
+  border: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 60ms ease-out;
+}
+.player-play:active { transform: scale(0.92); }
+
+/* Skip ±10s buttons (left + right of play) */
+.player-skip {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: transparent;
+  border: 0;
+  color: var(--text-3);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--motion-fast), color var(--motion-fast), transform 60ms ease-out;
+}
+.player-skip:hover  { background: rgba(0,0,0,.06); color: var(--text); }
+:root[data-power-mode="on"] .player-skip:hover { background: rgba(255,255,255,.06); color: var(--text); }
+.player-skip:active { transform: scale(0.92); }
+
+/* Speed-cycle button (right edge) */
+.player-speed {
+  background: transparent;
+  border: 0;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-feature-settings: "tnum";
+  transition: background var(--motion-fast), color var(--motion-fast), transform 60ms ease-out;
+}
+.player-speed:hover  { background: rgba(0,0,0,.06); color: var(--accent); }
+:root[data-power-mode="on"] .player-speed:hover { background: rgba(255,255,255,.06); color: var(--accent); }
+.player-speed:active { transform: scale(0.94); }
+.player-wave-wrap { flex: 1; }
+.player-wave {
+  height: 36px;
+  border-radius: 5px;
+  background: linear-gradient(to right,
+    var(--accent-tint-12) 0%,
+    var(--accent-tint-30) 20%,
+    var(--mark)            48%,
+    var(--mark)            52%,
+    var(--accent-tint-30)  78%,
+    var(--accent-tint-12)  100%);
+  position: relative; /* handles + canvas absolute inside */
+  cursor: pointer;
+  /* overflow visible so handles can extend past the wave edges */
+  overflow: visible;
+}
+/* Trim band — semi-transparent yellow indicating the clip-export window.
+   Sits over the waveform / thumbnails and under the handles. */
+.player-clip-band {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: color-mix(in srgb, var(--mark) 28%, transparent);
+  border-top: 2px solid var(--mark);
+  border-bottom: 2px solid var(--mark);
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mark) 50%, transparent);
+}
+/* Draggable handles. Audio branch keeps the original slim look (handles
+   sit over a 36 px waveform). Video branch overrides with the chunky
+   NLE-style grip below — declared after so the cascade wins. */
+.player-clip-handle {
+  position: absolute;
+  top: -4px; bottom: -4px;
+  width: 8px;
+  margin-left: -4px;
+  background: var(--mark);
+  border: 1px solid color-mix(in srgb, var(--mark-on) 30%, transparent);
+  border-radius: 3px;
+  cursor: ew-resize;
+  z-index: 4;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  transition: transform 60ms ease-out, background var(--motion-fast);
+}
+.player-clip-handle:hover  { background: color-mix(in srgb, var(--mark) 80%, white); }
+.player-clip-handle:active { transform: scaleY(1.05); }
+.player-clip-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 1px; height: 16px;
+  background: color-mix(in srgb, var(--mark-on) 40%, transparent);
+  transform: translate(-50%, -50%);
+}
+.player-clip-info {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  font-feature-settings: "tnum";
+  display: flex; gap: 6px;
+  align-items: center;
+}
+.player-clip-info-label {
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-size: 9.5px;
+  font-weight: 600;
+}
+.player-clip-info-range { color: var(--mark-on); font-weight: 600; background: color-mix(in srgb, var(--mark) 28%, transparent); padding: 0 4px; border-radius: 3px; }
+
+/* Numeric timecode inputs — let the user type "0:14" / "1:23:45" exactly
+ * (sometimes the visual handle is too imprecise for a 4-minute video,
+ * even with the new big strip). Same visual register as the existing
+ * range pill but interactive. */
+.player-clip-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  font-feature-settings: "tnum";
+  color: var(--mark-on);
+  background: color-mix(in srgb, var(--mark) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mark) 38%, transparent);
+  border-radius: 3px;
+  padding: 2px 6px;
+  width: 7ch;
+  text-align: center;
+  outline: none;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
+}
+.player-clip-input:hover  { border-color: var(--mark); }
+.player-clip-input:focus  {
+  border-color: var(--mark);
+  background: color-mix(in srgb, var(--mark) 36%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mark) 22%, transparent);
+}
+.player-clip-arrow { color: var(--text-4); font-weight: 600; }
+.player-clip-duration {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-size: 11px;
+  margin-left: 4px;
+}
+.player-clip-spacer { flex: 1; }
+.player-clip-reset {
+  background: transparent;
+  border: 1px solid var(--pane-border);
+  color: var(--text-3);
+  border-radius: 4px;
+  width: 26px; height: 22px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+.player-clip-reset:hover { background: var(--pane-elevated); color: var(--text); }
+.player-clip-hint {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--text-4);
+  display: flex; gap: 4px; align-items: center; flex-wrap: wrap;
+}
+.player-clip-hint kbd,
+.player-clip-hint .hint-kbd {
+  display: inline-block;
+  min-width: 14px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  background: var(--pane-elevated);
+  border: 1px solid var(--pane-border);
+  border-radius: 3px;
+  color: var(--text-2);
+  text-align: center;
+  line-height: 14px;
+}
+.player-playhead {
+  position: absolute; top: -3px; bottom: -3px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.player-times {
+  display: flex; justify-content: space-between;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  font-feature-settings: "tnum";
+}
+.player-video {
+  width: 100%;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.player-video video { width: 100%; max-height: 240px; display: block; }
+
+/* ─── Video trim picker — dual-zoom timeline ─────────────────────────
+ * CapCut / Final Cut-grade. Two stacked strips:
+ *   1. Overview minimap (32px) — full video duration, drag viewport
+ *      rectangle to pan the working strip.
+ *   2. Working strip (104px, tall enough for legible thumbnails) —
+ *      zoomed window where editing happens. Big handles with inward-
+ *      pointing triangular tabs (iMovie/Photos convention).
+ * Ruler with major + minor ticks between them.
+ * Magnified-frame popover floats above the strip during hover/drag
+ * (Frame.io style).
+ *
+ * The OLD .player-video-timeline / .player-video-* selectors were
+ * replaced by .vtrim-* here. No remaining markup uses them.
+ * ──────────────────────────────────────────────────────────────────── */
+.vtrim {
+  margin-top: 10px;
+  position: relative;       /* anchor for the floating preview popover */
+}
+
+/* Overview minimap (28 px). Always shows the full video at full scale
+   so the user has a stable mental "where am I in the talk" anchor. */
+.vtrim-overview {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  background: var(--pane-elevated);
+  border: 1px solid var(--pane-border);
+  border-radius: 5px;
+  overflow: hidden;
+  user-select: none;
+  cursor: pointer;
+}
+.vtrim-overview-thumbs {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  background: linear-gradient(180deg, var(--pane-elevated) 0%, var(--pane) 100%);
+  pointer-events: none;
+}
+.vtrim-overview-clip {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: color-mix(in srgb, var(--mark) 22%, transparent);
+  border-left: 1px solid var(--mark);
+  border-right: 1px solid var(--mark);
+  pointer-events: none;
+  z-index: 2;
+}
+.vtrim-overview-match {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--mark, #facc15);
+  pointer-events: none;
+  z-index: 3;
+  margin-left: -1px;
+  box-shadow: 0 0 4px color-mix(in srgb, var(--mark) 50%, transparent);
+}
+.vtrim-overview-playhead {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 4;
+  margin-left: -1px;
+}
+/* Yellow viewport rectangle showing what the working strip is zoomed
+   into. Drag to pan; click outside to recentre on that point. */
+.vtrim-overview-viewport {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: transparent;
+  border: 2px solid var(--accent);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
+              0 1px 4px rgba(0,0,0,.35);
+  pointer-events: auto;
+  cursor: grab;
+  z-index: 5;
+}
+.vtrim-overview-viewport:active { cursor: grabbing; }
+
+/* Ruler — sits between the overview and the working strip. */
+.vtrim-ruler {
+  position: relative;
+  height: 16px;
+  margin: 4px 0 2px;
+  border-bottom: 1px solid var(--pane-border);
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  color: var(--text-4);
+  font-size: 9.5px;
+}
+.vtrim-tick {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 6px;
+  background: var(--text-4);
+  pointer-events: none;
+}
+.vtrim-tick-label {
+  position: absolute;
+  bottom: 7px;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* Working strip — where the actual editing happens. */
+.vtrim-work {
+  position: relative;
+  width: 100%;
+  height: 104px;
+  background: var(--pane-elevated);
+  border: 1px solid var(--pane-border);
+  border-radius: 6px;
+  cursor: crosshair;
+  overflow: hidden;
+  user-select: none;
+}
+.vtrim-work-thumbs {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--pane-elevated) 0%, var(--pane) 100%);
+}
+.vtrim-thumb-tile {
+  position: absolute;
+  top: 0; bottom: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-right: 1px solid color-mix(in srgb, var(--pane) 35%, transparent);
+}
+.vtrim-overview-thumbs .vtrim-thumb-tile { position: relative; height: 100%; flex: 0 0 auto; }
+.vtrim-work-band {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: color-mix(in srgb, var(--mark) 22%, transparent);
+  border-top: 2px solid var(--mark);
+  border-bottom: 2px solid var(--mark);
+  pointer-events: none;
+  z-index: 2;
+}
+/* Clipped-edge indicator. The layout code clamps the band's left/
+   width to the viewport when the clip extends past either edge (the
+   raw render would have overflowed via the parent's overflow:hidden,
+   making the band right border just vanish into the strip margin and
+   looking like the trim widget was broken). The dataset attrs set in
+   _layoutAndPublish — clippedLeft / clippedRight — let us draw a
+   chevron stripe at the clamped edge so the user sees "selection
+   continues past this edge" instead of "selection ends here".
+   Diagonal repeating-gradient is the standard NLE convention
+   (Final Cut, Premiere, DaVinci all use a striped fill for clip
+   parts that extend past the visible window). */
+.vtrim-work-band[data-clipped-left="1"]::before,
+.vtrim-work-band[data-clipped-right="1"]::after {
+  content: "";
+  position: absolute;
+  top: -2px; bottom: -2px;
+  width: 10px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--mark),
+    var(--mark) 2px,
+    color-mix(in srgb, var(--mark) 25%, transparent) 2px,
+    color-mix(in srgb, var(--mark) 25%, transparent) 4px
+  );
+  pointer-events: none;
+}
+.vtrim-work-band[data-clipped-left="1"]::before  { left:  0; border-left:  2px solid var(--mark); }
+.vtrim-work-band[data-clipped-right="1"]::after  { right: 0; border-right: 2px solid var(--mark); }
+/* Floating clip-duration pill on the band.
+   Centered horizontally so it follows the band as the user drags
+   either handle. Uses container queries so the badge auto-hides
+   when the band gets too narrow (< 60px = badge overlaps handle
+   hit areas + readability dies). Backdrop-blur + semi-opaque pill
+   so it reads cleanly against both the keyframe filmstrip behind
+   AND the yellow band tint. font-mono + tnum so the duration
+   ticks update without jitter as the user drags. */
+.vtrim-work-band {
+  container-type: inline-size;
+  container-name: vtrim-band;
+}
+.vtrim-work-band-dur {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg, #1c1c20) 78%, transparent);
+  color: var(--text, #f2f2f5);
+  border: 1px solid color-mix(in srgb, var(--mark) 55%, transparent);
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 1;
+  transition: opacity 120ms ease;
+  z-index: 4;
+}
+@container vtrim-band (max-width: 60px) {
+  .vtrim-work-band-dur { opacity: 0; }
+}
+.vtrim-work-match {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--mark, #facc15);
+  pointer-events: none;
+  z-index: 3;
+  margin-left: -1px;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--mark) 60%, transparent);
+}
+.vtrim-work-playhead {
+  position: absolute;
+  top: -2px; bottom: -2px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 5;
+  margin-left: -1px;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.vtrim-work-playhead::before {
+  content: "";
+  position: absolute;
+  top: -2px; left: 50%; transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--accent);
+}
+
+/* iMovie/Photos-style clip handles. 16 px visible, full strip height,
+   triangular tab pointing INWARD toward the kept region. 28 px hit area
+   via pseudo-padding. */
+.vtrim-handle {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 16px;
+  margin-left: -8px;
+  background: var(--mark);
+  border-radius: 4px;
+  z-index: 6;
+  cursor: ew-resize;
+  box-shadow: 0 1px 4px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Expand hit area beyond the visible handle for easier grabbing */
+.vtrim-handle::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -8px; right: -8px;
+}
+.vtrim-handle-tab {
+  display: block;
+  width: 0; height: 0;
+  /* Triangle: points inward — start handle's tab points right (toward
+     the kept region), end handle's tab points left. */
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+.vtrim-handle-start .vtrim-handle-tab {
+  border-left: 7px solid color-mix(in srgb, var(--mark-on) 55%, transparent);
+  margin-left: 3px;
+}
+.vtrim-handle-end .vtrim-handle-tab {
+  border-right: 7px solid color-mix(in srgb, var(--mark-on) 55%, transparent);
+  margin-right: 3px;
+}
+.vtrim-handle:hover { background: color-mix(in srgb, var(--mark) 85%, white); }
+.vtrim-handle.dragging {
+  background: color-mix(in srgb, var(--mark) 75%, white);
+  transform: scaleY(1.03);
+}
+.vtrim-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Snap-flash — a thin dotted line that appears briefly when a handle
+   drag snaps to playhead / match marker. img.ly recommendation: only
+   draw snap visuals inside the visible viewport. */
+.vtrim-snap-flash {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--accent);
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 7;
+  opacity: 0;
+  box-shadow: 0 0 12px var(--accent), 0 0 24px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.vtrim-snap-flash.show {
+  animation: vtrim-snap-flash 350ms ease-out;
+}
+@keyframes vtrim-snap-flash {
+  0%   { opacity: 1; transform: scaleX(1.5); }
+  100% { opacity: 0; transform: scaleX(1); }
+}
+/* Snap-flash color variants. The flash now
+   identifies WHICH snap target the handle locked onto — pre-this-
+   commit every snap used the accent color, so a power user
+   dragging fast couldnt tell whether they snapped to the playhead,
+   the match-marker, or a keyframe boundary. The data-snap attr is
+   set by _flashSnap from the candidate's label. Colors mirror the
+   existing visual identity of each target:
+     - playhead (default)  → --accent  (matches the playhead bar)
+     - match               → --mark    (matches the match line +
+                                        bookmark filled-star)
+     - keyframe            → --ok      (fresh + neutral, doesnt
+                                        collide with the other two
+                                        and reads as "exact frame
+                                        edge" / "good cut here") */
+.vtrim-snap-flash[data-snap="match"] {
+  background: var(--mark);
+  box-shadow: 0 0 12px var(--mark), 0 0 24px color-mix(in srgb, var(--mark) 50%, transparent);
+}
+.vtrim-snap-flash[data-snap="keyframe"] {
+  background: var(--ok);
+  box-shadow: 0 0 12px var(--ok), 0 0 24px color-mix(in srgb, var(--ok) 50%, transparent);
+}
+
+/* Magnified-frame preview popover */
+.vtrim-preview {
+  position: absolute;
+  width: 260px;
+  background: var(--pane-elevated);
+  border: 1px solid var(--pane-border);
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.55);
+  padding: 6px;
+  pointer-events: none;
+  z-index: 50;
+}
+.vtrim-preview[hidden] { display: none !important; }
+.vtrim-preview img {
+  display: block;
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  background: #000;
+  border-radius: 3px;
+}
+.vtrim-preview-time {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-size: 11px;
+  color: var(--text-2);
+  text-align: center;
+}
+
+/* Info row + numeric inputs */
+.vtrim-info {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+}
+.vtrim-info-label {
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  margin-right: 2px;
+}
+.vtrim-info-arrow { color: var(--text-4); font-weight: 600; }
+.vtrim-info-dur {
+  color: var(--text-3);
+  font-size: 11px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-radius: 10px;
+}
+.vtrim-info-spacer { flex: 1; }
+/* Zoom-level indicator in the info row. Pre-this
+   the user had no on-screen cue for how zoomed in the working strip
+   was — a scroll-zoom could land them at the 4s floor and they'd
+   read the band filling the whole strip as a broken widget. This
+   sits just before the step buttons in the same row, mono + muted
+   so it reads as a status, not a control. Matches pro-NLE
+   convention (Premiere / DaVinci / Final Cut all surface the
+   timeline zoom span in a status row). */
+.vtrim-zoom-level {
+  color: var(--text-4);
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-size: 10px;
+  margin-right: 8px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+.vtrim-input {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mark-on);
+  background: color-mix(in srgb, var(--mark) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mark) 38%, transparent);
+  border-radius: 4px;
+  padding: 4px 8px;
+  width: 9ch;
+  text-align: center;
+  outline: none;
+  transition: border-color var(--motion-fast), background var(--motion-fast);
+}
+.vtrim-input:hover { border-color: var(--mark); }
+.vtrim-input:focus {
+  border-color: var(--mark);
+  background: color-mix(in srgb, var(--mark) 36%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mark) 22%, transparent);
+}
+/* Inline-validation pulse for the IN/OUT input when the user types
+   an unparseable timecode. Class is added by
+   _commitInput on parse failure and removed after 1.2 s — the
+   border + halo flash to the error color so the user gets visual
+   confirmation that the typed value was rejected, paired with the
+   flashToast that explains the expected formats. macOS-style
+   pulse rather than a steady-state error because the value
+   reverts automatically (no persistent invalid state to display). */
+.vtrim-input.vtrim-input-invalid {
+  border-color: var(--err);
+  background: color-mix(in srgb, var(--err) 18%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--err) 28%, transparent);
+  animation: vtrim-input-shake 0.34s ease-out;
+}
+@keyframes vtrim-input-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-3px); }
+  40%      { transform: translateX(3px); }
+  60%      { transform: translateX(-2px); }
+  80%      { transform: translateX(2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vtrim-input.vtrim-input-invalid { animation: none; }
+}
+.vtrim-icon-btn, .vtrim-step-btn {
+  background: transparent;
+  border: 1px solid var(--pane-border);
+  color: var(--text-3);
+  border-radius: 4px;
+  width: 30px; height: 26px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.vtrim-icon-btn:hover, .vtrim-step-btn:hover {
+  background: var(--pane-elevated);
+  color: var(--text);
+  border-color: var(--text-3);
+}
+.vtrim-hint {
+  margin-top: 6px;
+  font-size: 10.5px;
+  color: var(--text-4);
+  line-height: 1.5;
+}
+.vtrim-hint kbd {
+  display: inline-block;
+  min-width: 14px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  background: var(--pane-elevated);
+  border: 1px solid var(--pane-border);
+  border-radius: 3px;
+  color: var(--text-2);
+  text-align: center;
+  line-height: 14px;
+  margin: 0 1px;
+}
+.player-image img {
+  width: 100%; max-height: 480px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: rgba(0,0,0,.04);
+}

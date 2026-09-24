@@ -1,0 +1,38 @@
+[package]
+name = "tern"
+version = "0.1.0"
+description = "Tern — local AI search for podcast & video archives"
+authors = ["Andrii Boiko"]
+edition = "2021"
+rust-version = "1.77"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# No `macos-private-api`: Tauri requires that feature to be mirrored by
+# `app.macOSPrivateApi` in tauri.conf.json and fails the build when they
+# disagree. It exists for transparent and vibrancy windows; this app opens a
+# plain titled window and never touches either, so the feature comes off
+# rather than being switched on in the config to match.
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+
+# main.rs calls libc::kill(-pid, SIGTERM) to take down the whole sidecar
+# process group — the Python API plus any ffmpeg or whisper it spawned.
+# Killing only the direct child is what left 5 GB orphaned pythons behind.
+libc = "0.2"
+
+# Not referenced directly by main.rs, but `tauri::generate_context!()`
+# expands into code that needs both in scope. Standard for a Tauri crate.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

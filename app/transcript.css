@@ -1,0 +1,41 @@
+/* app/transcript.css */
+.transcript { font-size: 13px; line-height: 1.55; color: var(--text-2); }
+.transcript-line { padding: 2px 0; }
+.transcript-line.context { color: var(--text-3); }
+.transcript-line.match {
+  color: var(--text);
+  font-weight: 500;
+  background: color-mix(in srgb, var(--mark) 25%, transparent);
+  padding: 7px 11px;
+  border-radius: 7px;
+  border-left: 3px solid var(--mark);
+  margin: 8px -3px;
+}
+.transcript-line.match mark { background: var(--mark); color: var(--mark-on); padding: 0 3px; border-radius: 3px; font-weight: 700; }
+.transcript-line mark      { background: var(--mark-dim); color: var(--mark-on); padding: 0 3px; border-radius: 2px; }
+.transcript-line .word { cursor: pointer; padding: 0 1px; border-radius: 2px; }
+.transcript-line .word:hover { background: var(--accent-tint-12); }
+
+/* "Show more context" button at the bottom of the transcript window. */
+.transcript-more {
+  margin-top: 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+  width: 100%;
+}
+.transcript-more:hover:not(:disabled) {
+  background: var(--accent-tint-12);
+  border-style: solid;
+}
+.transcript-more:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
