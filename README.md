@@ -17,10 +17,32 @@
   <img src="https://img.shields.io/badge/license-all%20rights%20reserved-555" alt="All rights reserved">
 </p>
 
+<div align="center">
+<table>
+  <tr>
+    <td align="center" width="200"><b>3 search channels</b><br><sub>speech · on-screen text · picture</sub></td>
+    <td align="center" width="200"><b>On-device</b><br><sub>no media leaves the Mac</sub></td>
+    <td align="center" width="200"><b>500 tests</b><br><sub>pipeline · API · licence rules</sub></td>
+    <td align="center" width="200"><b>5 export formats</b><br><sub>MP4 · MP3 · SRT · CSV · FCPXML</sub></td>
+  </tr>
+</table>
+</div>
+
 ![Typing "butterfly" finds the shot in Big Buck Bunny from the picture alone, then the out-point is dragged and the clip grows from 8.0 s to 12.5 s](docs/media/tern-hero.gif)
 
 *Visual search: no transcript and no filename to match, only the frame. The
 clip is then trimmed in place, ready to export.*
+
+## Contents
+
+- [What it does](#what-it-does)
+- [How it works](#how-it-works)
+- [Engineering notes](#engineering-notes)
+- [Running it from source](#running-it-from-source)
+- [Tests](#tests)
+- [Layout](#layout)
+- [Status](#status)
+- [License](#license)
 
 ## What it does
 
@@ -70,6 +92,20 @@ demo podcast (the episodes are not included in this repository).*
 
 ## How it works
 
+### From a query to one ranked list
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/fusion-dark.svg">
+  <img src="docs/media/fusion-light.svg" alt="Four channels (speech, on-screen text, picture and filename) are searched in parallel and weighted; hits are grouped into five-second windows per file, where agreement between channels earns a capped bonus; a filename boost, a per-file cap and a visual noise floor then produce one ranked list">
+</picture>
+
+Each channel is searched on its own, so one failing channel degrades the list
+instead of blanking it. The noise floor exists because SigLIP always returns
+its nearest frames, even for a query that matches nothing; it is computed from
+picture scores only, and it never drops a hit that another channel confirmed.
+
+### Components
+
 ```mermaid
 flowchart LR
   subgraph mac["On the Mac"]
@@ -104,7 +140,8 @@ The parts that took real work, each with the code that does it:
 - **Fusion that does not trust any single model.** Hits from every channel
   are bucketed per file into five-second windows; a window where two or
   more channels agree gets a bonus capped at half its base score.
-  ([`search.py`](service_pipeline/tern/search.py))
+  ([`search.py`](service_pipeline/tern/search.py); see the
+  [diagram](#from-a-query-to-one-ranked-list))
 - **A noise floor for the visual channel.** SigLIP always returns its top N,
   so a query that matches nothing still gets confident-looking frames. Three
   filters (absolute, relative to the best hit, and a flat-distribution check
@@ -252,15 +289,16 @@ license_server/          licence validation, Supabase Edge Function + SQL
 scripts/                 demo setup, LGPL ffmpeg build, bundling, release, smoke tests
 third_party/             ffmpeg source tarball and licence notices
 demo/                    download scripts and provenance for the demo media
-docs/                    build log, troubleshooting, README media
+docs/                    troubleshooting, README media
 ```
 
 ## Status
 
-v0.1. Built between May and June 2026, with licensing, the LGPL ffmpeg
-build and signing preparation added in July, and search, storage and CI
-fixes in August and September. It was never released, and no build has
-been distributed.
+> [!NOTE]
+> v0.1. Built between May and June 2026, with licensing, the LGPL ffmpeg
+> build and signing preparation added in July, and search, storage and CI
+> fixes in August and September. It was never released, and no build has
+> been distributed.
 
 What is not finished:
 
@@ -298,10 +336,11 @@ point.
 
 ## License
 
-Source-visible, not open source. © 2026 Andrii Boiko, all rights reserved:
-the code is published so it can be read and reviewed, and
-[LICENSE](LICENSE) grants no permission to use, copy, modify, distribute,
-build or run it beyond what GitHub's Terms of Service allow.
+> [!IMPORTANT]
+> Source-visible, not open source. © 2026 Andrii Boiko, all rights reserved:
+> the code is published so it can be read and reviewed, and
+> [LICENSE](LICENSE) grants no permission to use, copy, modify, distribute,
+> build or run it beyond what GitHub's Terms of Service allow.
 
 Third-party components keep their own licences: ffmpeg rebuilt as LGPL 2.1
 from the unmodified upstream tarball in `third_party/ffmpeg/`, LAME (LGPL),
