@@ -1,96 +1,91 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="440" viewBox="0 0 1100 440" role="img" aria-label="How Tern fuses speech, on-screen text and visual hits into one ranked list">
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="856" viewBox="0 0 840 856" role="img" aria-label="How Tern fuses speech, on-screen text and visual hits into one ranked list">
 <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8c959f"/></marker></defs>
-<text x="20" y="28" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">1  Four channels, in parallel</text>
-<text x="292" y="28" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">2  Five-second buckets per file</text>
-<text x="590" y="28" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">3  Rank and filter</text>
-<text x="880" y="28" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">4  One ranked list</text>
-<rect x="20" y="50" width="240" height="68" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
-<circle cx="40" cy="73" r="6" fill="#0a84ff"/>
-<text x="54" y="78" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">Speech</text>
-<text x="246" y="78" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" text-anchor="end">weight 0.45</text>
-<text x="34" y="102" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">whisper.cpp, then FTS5 (bm25)</text>
-<rect x="20" y="132" width="240" height="68" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
-<circle cx="40" cy="155" r="6" fill="#ff9500"/>
-<text x="54" y="160" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">On-screen text</text>
-<text x="246" y="160" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" text-anchor="end">weight 0.20</text>
-<text x="34" y="184" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">Apple Vision OCR, then FTS5</text>
-<rect x="20" y="214" width="240" height="68" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
-<circle cx="40" cy="237" r="6" fill="#34c759"/>
-<text x="54" y="242" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">Picture</text>
-<text x="246" y="242" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" text-anchor="end">weight 0.35</text>
-<text x="34" y="266" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">SigLIP-2, then HNSW cosine</text>
-<rect x="20" y="296" width="240" height="68" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
-<circle cx="40" cy="319" r="6" fill="#8c959f"/>
-<text x="54" y="324" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">Filename</text>
-<text x="34" y="348" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">basename token match, scored as picture</text>
-<line x1="264" y1="84" x2="286" y2="200" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
-<line x1="264" y1="166" x2="286" y2="200" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
-<line x1="264" y1="248" x2="286" y2="200" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
-<line x1="264" y1="330" x2="286" y2="200" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
-<rect x="292" y="50" width="262" height="314" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
-<text x="306" y="76" fill="#1f2328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" text-anchor="start">interview_ep12.mp3</text>
-<rect x="306" y="90" width="234" height="58" rx="6" fill="#ffffff" stroke="#d1d9e0"/>
-<circle cx="325.5" cy="104" r="5" fill="#0a84ff"/>
-<text x="325.5" y="164" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" text-anchor="middle">0s</text>
-<line x1="345.0" y1="90" x2="345.0" y2="148" stroke="#d1d9e0" stroke-dasharray="3 3"/>
-<text x="364.5" y="164" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" text-anchor="middle">5s</text>
-<line x1="384.0" y1="90" x2="384.0" y2="148" stroke="#d1d9e0" stroke-dasharray="3 3"/>
-<rect x="386.0" y="92" width="35.0" height="54" rx="5" fill="#ddf4ff" stroke="#0969da" stroke-width="1.5"/>
-<circle cx="403.5" cy="104" r="5" fill="#0a84ff"/>
-<circle cx="403.5" cy="119" r="5" fill="#ff9500"/>
-<circle cx="403.5" cy="134" r="5" fill="#34c759"/>
-<text x="403.5" y="164" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" text-anchor="middle">10s</text>
-<line x1="423.0" y1="90" x2="423.0" y2="148" stroke="#d1d9e0" stroke-dasharray="3 3"/>
-<text x="442.5" y="164" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" text-anchor="middle">15s</text>
-<line x1="462.0" y1="90" x2="462.0" y2="148" stroke="#d1d9e0" stroke-dasharray="3 3"/>
-<circle cx="481.5" cy="104" r="5" fill="#34c759"/>
-<text x="481.5" y="164" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" text-anchor="middle">20s</text>
-<line x1="501.0" y1="90" x2="501.0" y2="148" stroke="#d1d9e0" stroke-dasharray="3 3"/>
-<circle cx="520.5" cy="104" r="5" fill="#ff9500"/>
-<text x="520.5" y="164" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" text-anchor="middle">25s</text>
-<text x="306" y="194" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="start">Hits are grouped by file and</text>
-<text x="306" y="212" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="start">five-second window; each window</text>
-<text x="306" y="230" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="start">keeps its best-scoring hit.</text>
-<rect x="306" y="246" width="234" height="100" rx="8" fill="#ddf4ff" stroke="#0969da"/>
-<text x="318" y="269" fill="#0969da" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="650" text-anchor="start">Channels agree: bonus</text>
-<text x="318" y="292" fill="#1f2328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" text-anchor="start">+ min(next/2, base/2)</text>
-<text x="318" y="312" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">and the hit is badged as</text>
-<text x="318" y="329" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">a multi-channel match</text>
-<line x1="558" y1="200" x2="584" y2="200" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
-<rect x="590" y="50" width="258" height="60" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
-<text x="604" y="75" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">Filename boost</text>
-<text x="604" y="96" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">a query word in the file name: x 1.2</text>
-<line x1="719.0" y1="112" x2="719.0" y2="128" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
-<rect x="590" y="130" width="258" height="60" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
-<text x="604" y="155" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">Diversity cap</text>
-<text x="604" y="176" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">at most 4 hits from any one file</text>
-<line x1="719.0" y1="192" x2="719.0" y2="208" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
-<rect x="590" y="210" width="258" height="154" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
-<text x="604" y="235" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="650" text-anchor="start">Visual noise floor</text>
-<text x="604" y="258" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">Drop picture-only hits below</text>
-<text x="604" y="275" fill="#1f2328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" text-anchor="start">max(0.07, top/2)</text>
-<text x="604" y="294" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">Drop them all when the top is weak</text>
-<text x="604" y="311" fill="#1f2328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" text-anchor="start">top &lt; 0.12, top-5 spread &lt; 0.02</text>
-<text x="604" y="330" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">Never drops</text>
-<text x="604" y="347" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">multi-channel or filename hits</text>
-<line x1="852" y1="200" x2="874" y2="200" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
-<rect x="880" y="50" width="200" height="58" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
-<text x="892" y="72" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="650" text-anchor="start">1</text>
-<text x="910" y="72" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">interview_ep12  0:10</text>
-<rect x="910" y="81" width="131" height="18" rx="9" fill="#0969da"/><text x="975.5" y="94" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" text-anchor="middle">Speech + On-screen</text>
-<rect x="880" y="118" width="200" height="58" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
-<text x="892" y="140" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="650" text-anchor="start">2</text>
-<text x="910" y="140" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">interview_ep12  1:42</text>
-<rect x="910" y="149" width="52" height="18" rx="9" fill="#0a84ff"/><text x="936.0" y="162" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" text-anchor="middle">Speech</text>
-<rect x="880" y="186" width="200" height="58" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
-<text x="892" y="208" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="650" text-anchor="start">3</text>
-<text x="910" y="208" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">interview_ep12  0:20</text>
-<rect x="910" y="217" width="52" height="18" rx="9" fill="#34c759"/><text x="936.0" y="230" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" text-anchor="middle">Visual</text>
-<rect x="880" y="254" width="200" height="58" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
-<text x="892" y="276" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="650" text-anchor="start">4</text>
-<text x="910" y="276" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">interview_ep12  0:25</text>
-<rect x="910" y="285" width="71" height="18" rx="9" fill="#ff9500"/><text x="945.5" y="298" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" text-anchor="middle">On-screen</text>
-<text x="880" y="336" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">The top N go to the UI, with</text>
-<text x="880" y="354" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" text-anchor="start">every query word highlighted.</text>
-<text x="20" y="426" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" text-anchor="start">Weights are the API defaults. Constants from service_pipeline/tern/search.py.</text>
+<text x="16" y="32" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">1  Four channels, searched in parallel</text>
+<text x="444" y="32" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">2  Five-second buckets per file</text>
+<text x="16" y="444" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">3  Rank and filter</text>
+<text x="444" y="444" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">4  One ranked list</text>
+<rect x="16" y="58" width="380" height="74" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<circle cx="38" cy="84" r="7" fill="#0a84ff"/>
+<text x="54" y="90" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">Speech</text>
+<text x="380" y="90" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="end">weight 0.45</text>
+<text x="32" y="116" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">whisper.cpp, then SQLite FTS5 (bm25)</text>
+<rect x="16" y="144" width="380" height="74" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<circle cx="38" cy="170" r="7" fill="#ff9500"/>
+<text x="54" y="176" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">On-screen text</text>
+<text x="380" y="176" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="end">weight 0.20</text>
+<text x="32" y="202" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">Apple Vision OCR, then SQLite FTS5</text>
+<rect x="16" y="230" width="380" height="74" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<circle cx="38" cy="256" r="7" fill="#34c759"/>
+<text x="54" y="262" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">Picture</text>
+<text x="380" y="262" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="end">weight 0.35</text>
+<text x="32" y="288" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">SigLIP-2 embeddings, then HNSW cosine</text>
+<rect x="16" y="316" width="380" height="74" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<circle cx="38" cy="342" r="7" fill="#8c959f"/>
+<text x="54" y="348" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">Filename</text>
+<text x="32" y="374" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">a query word in the file name, scored as picture</text>
+<line x1="402" y1="228" x2="436" y2="228" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="444" y="58" width="380" height="332" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="460" y="88" fill="#1f2328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="400" text-anchor="start">interview_ep12.mp3</text>
+<rect x="460" y="104" width="348" height="66" rx="6" fill="#ffffff" stroke="#d1d9e0"/>
+<circle cx="489.0" cy="120" r="6" fill="#0a84ff"/>
+<text x="489.0" y="190" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="middle">0s</text>
+<line x1="518.0" y1="104" x2="518.0" y2="170" stroke="#d1d9e0" stroke-dasharray="3 3"/>
+<text x="547.0" y="190" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="middle">5s</text>
+<line x1="576.0" y1="104" x2="576.0" y2="170" stroke="#d1d9e0" stroke-dasharray="3 3"/>
+<rect x="579.0" y="107" width="52.0" height="60" rx="5" fill="#ddf4ff" stroke="#0969da" stroke-width="1.6"/>
+<circle cx="605.0" cy="120" r="6" fill="#0a84ff"/>
+<circle cx="605.0" cy="137" r="6" fill="#ff9500"/>
+<circle cx="605.0" cy="154" r="6" fill="#34c759"/>
+<text x="605.0" y="190" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="middle">10s</text>
+<line x1="634.0" y1="104" x2="634.0" y2="170" stroke="#d1d9e0" stroke-dasharray="3 3"/>
+<text x="663.0" y="190" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="middle">15s</text>
+<line x1="692.0" y1="104" x2="692.0" y2="170" stroke="#d1d9e0" stroke-dasharray="3 3"/>
+<circle cx="721.0" cy="120" r="6" fill="#34c759"/>
+<text x="721.0" y="190" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="middle">20s</text>
+<line x1="750.0" y1="104" x2="750.0" y2="170" stroke="#d1d9e0" stroke-dasharray="3 3"/>
+<circle cx="779.0" cy="120" r="6" fill="#ff9500"/>
+<text x="779.0" y="190" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="middle">25s</text>
+<text x="460" y="222" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="start">Hits are grouped by file and five-second</text>
+<text x="460" y="242" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="start">window; each window keeps its best hit.</text>
+<rect x="460" y="260" width="348" height="104" rx="8" fill="#ddf4ff" stroke="#0969da"/>
+<text x="476" y="288" fill="#0969da" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">Channels agree: bonus</text>
+<text x="476" y="314" fill="#1f2328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14.5" font-weight="400" text-anchor="start">+ min(next/2, base/2)</text>
+<text x="476" y="340" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">and the hit is badged as a multi-channel match</text>
+<path d="M634.0,396 L634.0,420 L206.0,420 L206.0,462" fill="none" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="16" y="470" width="380" height="66" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="32" y="498" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">Filename boost</text>
+<text x="32" y="521" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">a query word in the file name: score x 1.2</text>
+<line x1="206.0" y1="538" x2="206.0" y2="554" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="16" y="556" width="380" height="66" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="32" y="584" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">Diversity cap</text>
+<text x="32" y="607" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">at most 4 hits from any one file</text>
+<line x1="206.0" y1="624" x2="206.0" y2="640" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="16" y="642" width="380" height="164" rx="10" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="32" y="670" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">Visual noise floor</text>
+<text x="32" y="694" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">Drop picture-only hits scoring below</text>
+<text x="32" y="713" fill="#1f2328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" text-anchor="start">max(0.07, top/2)</text>
+<text x="32" y="732" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">Drop all of them when the top is weak and flat</text>
+<text x="32" y="751" fill="#1f2328" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5" font-weight="400" text-anchor="start">top &lt; 0.12 and top-5 spread &lt; 0.02</text>
+<text x="32" y="770" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">Never drops</text>
+<text x="32" y="789" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">multi-channel or filename hits</text>
+<line x1="402" y1="620" x2="436" y2="620" stroke="#8c959f" stroke-width="1.6" marker-end="url(#ah)"/>
+<rect x="444" y="470" width="380" height="62" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="460" y="508" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">1</text>
+<text x="484" y="496" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="start">interview_ep12.mp3  at 0:10</text>
+<rect x="484" y="505" width="136" height="20" rx="10" fill="#0969da"/><text x="552.0" y="519.5" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" text-anchor="middle">Speech + On-screen</text>
+<rect x="444" y="542" width="380" height="62" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="460" y="580" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">2</text>
+<text x="484" y="568" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="start">interview_ep12.mp3  at 1:42</text>
+<rect x="484" y="577" width="55" height="20" rx="10" fill="#0a84ff"/><text x="511.5" y="591.5" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" text-anchor="middle">Speech</text>
+<rect x="444" y="614" width="380" height="62" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="460" y="652" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">3</text>
+<text x="484" y="640" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="start">interview_ep12.mp3  at 0:20</text>
+<rect x="484" y="649" width="55" height="20" rx="10" fill="#34c759"/><text x="511.5" y="663.5" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" text-anchor="middle">Visual</text>
+<rect x="444" y="686" width="380" height="62" rx="8" fill="#f6f8fa" stroke="#d1d9e0"/>
+<text x="460" y="724" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" font-weight="650" text-anchor="start">4</text>
+<text x="484" y="712" fill="#1f2328" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="400" text-anchor="start">interview_ep12.mp3  at 0:25</text>
+<rect x="484" y="721" width="75" height="20" rx="10" fill="#ff9500"/><text x="521.5" y="735.5" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" text-anchor="middle">On-screen</text>
+<text x="444" y="774" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">The top N go to the UI, with every query word</text>
+<text x="444" y="794" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13.5" font-weight="400" text-anchor="start">highlighted in the snippet.</text>
+<text x="16" y="842" fill="#59636e" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" text-anchor="start">Weights are the API defaults. Constants from service_pipeline/tern/search.py.</text>
 </svg>
