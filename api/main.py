@@ -6,10 +6,10 @@ from the root path.
 
 Run:
     cd tern/api
-    uv run uvicorn main:app --host 127.0.0.1 --port 8765 --reload
+    uv run uvicorn main:app --host 127.0.0.1 --port 18765 --reload
 
 Open:
-    http://localhost:8765
+    http://localhost:18765
 """
 from __future__ import annotations
 
@@ -505,16 +505,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    # SECURITY: allow_origins previously included "*" — combined with the
-    # no-auth loopback model, that meant any website the user visits in
-    # Safari/Chrome could make cross-origin requests to 127.0.0.1:8765 and
+    # SECURITY: allow_origins must never include "*". With the no-auth
+    # loopback model, a wildcard lets any website the user visits in
+    # Safari/Chrome make cross-origin requests to 127.0.0.1:18765 and
     # exfiltrate the full search index, file paths, and diagnostics. The
     # path-traversal allowlist doesn't help
     # against /api/search / /api/files / /api/stats which are by-design
     # "return everything in the index" reads.
     #
-    # Replace wildcard with a regex covering only loopback. Any localhost
-    # or 127.0.0.1 port matches (Rust shell auto-finds a free port from
+    # Instead a regex covers only loopback. Any localhost
+    # or 127.0.0.1 port matches (the Rust shell auto-finds a free port from
     # 18765 upward, so a fixed origin list would be brittle).
     # Plus the tauri:// scheme used by the asset protocol (currently
     # unused since we load via http://127.0.0.1, but harmless to grant).
@@ -524,6 +524,86 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ─── Host-header guard (DNS rebinding) ───────────────────────────────────
+# CORS only governs cross-origin reads. A DNS-rebinding page first resolves
+# its own name to a public address, then re-points it at 127.0.0.1: the
+# browser now treats the loopback API as SAME-origin with that page, so no
+# CORS check ever fires, yet every request still carries the attacker's name
+# in its Host header. Accepting only loopback names on the port this server
+# is actually listening on closes that path.
+#
+# The desktop shell navigates its webview to http://127.0.0.1:<port>/ and the
+# frontend uses relative URLs, so its Host is always 127.0.0.1:<port>.
+# Browsers pointed at localhost (./run.sh, dev servers) use the other names.
+_LOOPBACK_HOSTNAMES = frozenset({"127.0.0.1", "localhost", "[::1]"})
+
+
+def _host_header_allowed(host_header: str | None, server_port: int | None) -> bool:
+    """True when `Host` is a loopback name on the port this server listens on.
+
+    `server_port` comes from the ASGI scope (the socket the request arrived
+    on), not from configuration, so it stays right for any auto-picked port.
+    A Host without a port means the scheme default (80) and only matches a
+    server actually listening there. `None` (unix socket) skips the port
+    comparison and checks the name alone.
+    """
+    if not host_header:
+        return False
+    host = host_header.strip().lower()
+    if host.startswith("["):
+        # IPv6 literal: "[::1]" or "[::1]:18765".
+        end = host.find("]")
+        if end == -1:
+            return False
+        name, rest = host[: end + 1], host[end + 1:]
+        if rest and not rest.startswith(":"):
+            return False
+        port_text = rest[1:]
+    else:
+        name, _, port_text = host.partition(":")
+    if name not in _LOOPBACK_HOSTNAMES:
+        return False
+    if port_text and not (port_text.isascii() and port_text.isdigit()):
+        return False
+    if server_port is None:
+        return True
+    return (int(port_text) if port_text else 80) == server_port
+
+
+class _LoopbackHostGuard:
+    """Pure-ASGI middleware: reject requests whose Host is not loopback.
+
+    Written by hand rather than with Starlette's TrustedHostMiddleware
+    because that one matches host names only and cannot bind the check to
+    the port the server is listening on (which is chosen at launch).
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket"):
+            hosts = [v for k, v in scope["headers"] if k == b"host"]
+            server = scope.get("server")
+            port = server[1] if server else None
+            ok = len(hosts) == 1 and _host_header_allowed(
+                hosts[0].decode("latin-1"), port
+            )
+            if not ok:
+                if scope["type"] == "http":
+                    resp = JSONResponse({"detail": "Invalid Host header"}, status_code=400)
+                    await resp(scope, receive, send)
+                else:
+                    await send({"type": "websocket.close", "code": 1008})
+                return
+        await self.inner(scope, receive, send)
+
+
+# Added after CORSMiddleware so it is the outermost layer: a request with a
+# foreign Host is refused before CORS (or any route) sees it.
+app.add_middleware(_LoopbackHostGuard)
 
 
 # Cap the in-memory indexing log. app.state.indexing["log"] is a plain
@@ -720,6 +800,30 @@ _LICENSE_FILE = _state_dir() / "license.json"
 # license_server/ (see license_server/README.md). Unset means activation
 # answers with a clear "not configured" message instead of guessing a host.
 _LICENSE_DEFAULT_SERVER = os.environ.get("TERN_LICENSE_SERVER", "").strip()
+# Further endpoints an activation request may name in `server_url` (for
+# example a customer's self-hosted deployment): comma-separated full URLs in
+# TERN_LICENSE_ALLOWED_SERVERS. Together with the default above this is the
+# whole allowlist; any other server_url is refused, so the API cannot be
+# pointed at an arbitrary host by whatever can reach the loopback port.
+def _parse_server_list(raw: str) -> tuple[str, ...]:
+    return tuple(u.strip() for u in raw.split(",") if u.strip())
+
+
+_LICENSE_EXTRA_SERVERS = _parse_server_list(os.environ.get("TERN_LICENSE_ALLOWED_SERVERS", ""))
+
+
+def _endpoint_key(url: str) -> tuple:
+    """Comparable form of an endpoint URL: scheme and host are
+    case-insensitive, a trailing slash on the path is not significant."""
+    from urllib.parse import urlsplit
+    p = urlsplit(url.strip())
+    return (p.scheme.lower(), p.netloc.lower(), p.path.rstrip("/"), p.query)
+
+
+def _license_server_allowed(url: str) -> bool:
+    """True when `url` is the configured licence server or on the allowlist."""
+    allowed = [_LICENSE_DEFAULT_SERVER, *_LICENSE_EXTRA_SERVERS]
+    return _endpoint_key(url) in {_endpoint_key(u) for u in allowed if u}
 
 
 def _is_licensed(cache: dict | None = None) -> bool:
@@ -903,32 +1007,24 @@ def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> Non
 
 
 class LicenseActivateRequest(BaseModel):
-    """Input gating for /api/license/activate. Previously, both
-    fields had ZERO validation:
+    """Input gating for /api/license/activate.
 
-      - license_key: any string of any length. A local process POSTing
-        `{"license_key": "X" * 10_000_000}` would happily forward a
-        10 MB body to the licence server, waste bandwidth, and
-        cache the (rejected) garbage to ~/Library/Application Support/
-        Tern/license.json — bloating that file across attempts.
-      - server_url: any string, used verbatim as the request URL prefix.
-        urlopen would reject obviously bad schemes (javascript:, etc.)
-        with a cryptic error, but more dangerously: a local-process
-        attacker could redirect the activation POST to their own
-        server to harvest license keys ("you typed your key into Tern;
-        the activation went to attacker.com instead of the licence
-        server").
-        The CORS gate doesn't help here — this isn't a browser request,
-        it's any local process curling the loopback API.
-
-    Real licence keys are short (TERN-XXXX-XXXX-XXXX is 19 chars). Cap
-    the key at 256 to leave headroom for future formats (UUID + hyphens
-    + version prefix).
-    Cap server_url at 2 KB (RFC 7230 effective limit for many servers).
-    The scheme guard rejects anything that isn't an http/https URL —
-    self-hosting power users (the original reason server_url is exposed)
-    always use http(s); javascript: / file: / data: / ftp: are pure
-    attack surface.
+      - license_key: capped at 256 chars. A local process POSTing
+        `{"license_key": "X" * 10_000_000}` would otherwise make the API
+        forward a 10 MB body to the licence server and cache the
+        (rejected) garbage to ~/Library/Application Support/Tern/license.json.
+        Real keys are short (TERN-XXXX-XXXX-XXXX is 19 chars); 256 leaves
+        headroom for future formats (UUID + hyphens + version prefix).
+      - server_url: optional, at most 2 KB, http(s) only, and it must match
+        the configured licence server (TERN_LICENSE_SERVER) or an entry of
+        TERN_LICENSE_ALLOWED_SERVERS; the handler refuses anything else.
+        Otherwise a local-process attacker could redirect the activation
+        POST to their own server to harvest license keys ("you typed your
+        key into Tern; the activation went to attacker.com instead of the
+        licence server"). The CORS gate doesn't help here — this isn't a
+        browser request, it's any local process curling the loopback API.
+        The scheme guard rejects javascript: / file: / data: / ftp: before
+        the allowlist is consulted.
     """
     license_key: str = Field(..., min_length=1, max_length=256)
     server_url: Optional[str] = Field(default=None, max_length=2048)
@@ -990,7 +1086,14 @@ async def license_activate(req: LicenseActivateRequest):
     key = (req.license_key or "").strip()
     if not key:
         raise HTTPException(400, "license_key is required")
-    server = (req.server_url or _LICENSE_DEFAULT_SERVER).rstrip("/")
+    requested = (req.server_url or "").strip()
+    if requested and not _license_server_allowed(requested):
+        raise HTTPException(
+            403,
+            "server_url is not a configured licence server. Set "
+            "TERN_LICENSE_SERVER, or list it in TERN_LICENSE_ALLOWED_SERVERS.",
+        )
+    server = (requested or _LICENSE_DEFAULT_SERVER).rstrip("/")
     if not server:
         # Not a transport failure, so the cached state is reported as-is
         # rather than treated as a flaky connection.
@@ -2026,7 +2129,7 @@ def _is_allowed_serve_path(file_path: Path) -> bool:
     """Path-traversal allowlist for /api/file.
 
     A local attacker (other browser tab on localhost, another process curl'ing
-    127.0.0.1:8765, etc.) could otherwise pull /etc/passwd, ~/.ssh/id_rsa,
+    127.0.0.1:18765, etc.) could otherwise pull /etc/passwd, ~/.ssh/id_rsa,
     anything. Allow only:
       1. Files under the writable workspace (db/, thumbnails/, exports/).
       2. Files explicitly added to the index — i.e., paths that match a row

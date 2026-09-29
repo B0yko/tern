@@ -40,7 +40,7 @@ def client():
             "stage": None, "stage_label": None, "stage_started_at": None,
             "stage_progress": None,
         }
-    yield TestClient(app)
+    yield TestClient(app, base_url="http://127.0.0.1:18765")
 
 
 @pytest.fixture
@@ -288,6 +288,7 @@ def test_activation_sends_a_machine_id_for_seat_counting(client, state_dir, monk
     import urllib.request
     monkeypatch.setattr(urllib.request, "urlopen", _fake_urlopen)
 
+    monkeypatch.setattr(main, "_LICENSE_EXTRA_SERVERS", ("https://licence.example.com",))
     r = client.post("/api/license/activate", json={
         "license_key": "TERN-TEST-KEY",
         "server_url": "https://licence.example.com",
@@ -323,6 +324,7 @@ def test_the_configured_url_is_the_endpoint_not_a_prefix(client, state_dir, monk
     monkeypatch.setattr(urllib.request, "urlopen", _fake_urlopen)
 
     endpoint = "https://proj.supabase.co/functions/v1/license-validate"
+    monkeypatch.setattr(main, "_LICENSE_EXTRA_SERVERS", (endpoint,))
     r = client.post("/api/license/activate",
                     json={"license_key": "K", "server_url": endpoint})
     assert r.status_code == 200, r.text
@@ -343,6 +345,8 @@ def test_a_trailing_slash_on_the_endpoint_is_tolerated(client, state_dir, monkey
     monkeypatch.setattr(urllib.request, "urlopen",
                         lambda req, timeout=None: (sent.update(url=req.full_url), _FakeResponse())[1])
 
+    monkeypatch.setattr(main, "_LICENSE_EXTRA_SERVERS",
+                        ("https://proj.supabase.co/functions/v1/license-validate",))
     client.post("/api/license/activate", json={
         "license_key": "K",
         "server_url": "https://proj.supabase.co/functions/v1/license-validate/",

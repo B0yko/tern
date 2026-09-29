@@ -22,7 +22,7 @@
   <tr>
     <td align="center" width="200"><b>3 search channels</b><br><sub>speech · on-screen text · picture</sub></td>
     <td align="center" width="200"><b>On-device</b><br><sub>no media leaves the Mac</sub></td>
-    <td align="center" width="200"><b>500 tests</b><br><sub>pipeline · API · licence rules</sub></td>
+    <td align="center" width="200"><b>539 tests</b><br><sub>pipeline · API · licence rules</sub></td>
     <td align="center" width="200"><b>5 export formats</b><br><sub>MP4 · MP3 · SRT · CSV · FCPXML</sub></td>
   </tr>
 </table>
@@ -166,7 +166,10 @@ The parts that took real work, each with the code that does it:
   while the FTS5 channels run, so their costs overlap instead of adding up;
   the smoke test holds a search to a p50 under 100 ms.
 - **The loopback API is treated as hostile.** CORS allows loopback and the
-  Tauri origin only, every endpoint that serves, opens or exports a file
+  Tauri origin only, a Host-header guard refuses any name that is not a
+  loopback name on the port the server listens on (so a DNS-rebinding page
+  is turned away), the licence endpoint is fixed by configuration, every
+  endpoint that serves, opens or exports a file
   checks a workspace-and-index allowlist before it checks existence, and
   `/api/diagnostics` strips the home directory out of every path.
   ([`api/main.py`](api/main.py))
@@ -249,7 +252,7 @@ permissions and timeouts.
 
 ## Tests
 
-500 tests: 168 for the pipeline, 319 for the API, and 13 for the licence
+539 tests: 168 for the pipeline, 358 for the API, and 13 for the licence
 server's seat rules.
 
 ```bash
@@ -313,15 +316,11 @@ What is not finished:
   the GPL x265 encoder, so HEIC decoding needs another library before any
   build ships ([third_party/NOTICE.md](third_party/NOTICE.md)).
 - **The trial gate is advisory.** The quota is enforced in the API, so the
-  bundled CLI indexes without it; licence verdicts are cached unsigned, and
-  an activation request may name its own licence server. It stops casual
-  copying, not a determined user.
+  bundled CLI indexes without it, and licence verdicts are cached unsigned.
+  It stops casual copying, not a determined user.
 - **Moving a workspace leaves stale paths.** Only the seeded demo's paths
   are re-rooted in SQLite on start, and the keyframe metadata in ChromaDB
   never is, so visual hits in a moved workspace show blank thumbnails.
-- **No Host-header check.** CORS keeps other websites from reading the
-  loopback API, but without a trusted-host check a DNS-rebinding page is not
-  kept out.
 - **Language coverage.** Transcription runs in English unless a language is
   passed, and FTS5's `unicode61` tokenizer does not segment Chinese or
   Japanese.

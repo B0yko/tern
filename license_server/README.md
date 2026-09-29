@@ -88,8 +88,10 @@ The desktop app reads the endpoint from `TERN_LICENSE_SERVER` (see
 Supabase function is served at `/functions/v1/<name>` and cannot host a
 `/api/license/validate` path of its own. There is no default in the source:
 a build has to set it for the API sidecar. An activation request can also
-carry its own `server_url`, which takes precedence; with neither, activation
-answers with a message naming the setting.
+carry a `server_url`, which takes precedence, but only if it equals that
+endpoint or is listed in `TERN_LICENSE_ALLOWED_SERVERS` (comma-separated
+full endpoints); any other value is refused with a 403. With no endpoint
+configured, activation answers with a message naming the setting.
 
 ## Two behaviours worth knowing
 

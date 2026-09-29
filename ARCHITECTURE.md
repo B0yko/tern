@@ -244,10 +244,12 @@ machines racing for the last seat are serialised and only one of them gets
 it.
 
 No endpoint is compiled into the source. The API reads it from
-`TERN_LICENSE_SERVER`; an activation request may also name its own
-`server_url`, which is how a self-hosted `license_server/` is tested. With
-neither, activation answers with a message naming the setting instead of
-contacting anything.
+`TERN_LICENSE_SERVER`; an activation request may also name a `server_url`,
+but only one that equals that endpoint or is listed in
+`TERN_LICENSE_ALLOWED_SERVERS` (comma-separated), which is how a self-hosted
+`license_server/` is tested. Any other `server_url` is refused with a 403
+before a connection is opened. With no endpoint configured, activation
+answers with a message naming the setting instead of contacting anything.
 
 The endpoint answers a bad key with 200 and `is_valid: false`, and a
 database failure with 503. The client treats any transport failure as
@@ -259,7 +261,7 @@ this stops casual copying, not a determined user.
 
 ## Testing
 
-500 tests across three suites: 168 for the pipeline, 319 for the API, and
+539 tests across three suites: 168 for the pipeline, 358 for the API, and
 13 for the licence server's seat rules.
 
 ```bash

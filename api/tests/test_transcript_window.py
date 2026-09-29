@@ -3,7 +3,8 @@ from fastapi.testclient import TestClient
 import pytest
 from main import app
 
-client = TestClient(app)
+# The API only answers loopback Host headers, on the port it listens on.
+client = TestClient(app, base_url="http://127.0.0.1:18765")
 
 
 @pytest.fixture(scope="module")

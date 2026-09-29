@@ -2,7 +2,7 @@
 # Tern — one-command dev launcher.
 #
 #   ./run.sh                 # demo workspace, first free port from 18765
-#   TERN_PORT=8765 ./run.sh  # pin the port
+#   TERN_PORT=18800 ./run.sh # pin the port
 #   TERN_WORKSPACE=/path/to/archive ./run.sh
 #
 # Starts the FastAPI backend and opens the browser at it. The Tauri shell

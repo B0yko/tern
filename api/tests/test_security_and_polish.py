@@ -20,7 +20,7 @@ def client():
     """`with TestClient(app)` triggers FastAPI lifespan so app.state.indexing
     + app.state.engine et al. exist by the time handlers run. Module-scoped
     so SigLIP only loads once per test module instead of per test."""
-    with TestClient(app) as c:
+    with TestClient(app, base_url="http://127.0.0.1:18765") as c:
         yield c
 
 
@@ -2433,8 +2433,8 @@ def test_diagnostics_redacts_home_path_to_tilde(client, monkeypatch):
 # legitimate loopback origins pass, public origins fail.
 
 @pytest.mark.parametrize("origin", [
-    "http://127.0.0.1:8765",     # default Tern port
-    "http://127.0.0.1:18765",    # dev_check / init_demo default
+    "http://127.0.0.1:18765",    # default Tern port (run.sh / dev_check / init_demo)
+    "http://127.0.0.1:8765",     # fallback port
     "http://localhost:8765",
     "http://localhost:43521",    # arbitrary high port — auto-find range
     "https://127.0.0.1:8765",    # https variant (some Tauri configs)
@@ -2940,9 +2940,9 @@ def test_license_activate_rejects_non_http_server_url(client):
 
 
 def test_license_activate_accepts_https_server_url(client, monkeypatch):
-    """Sanity: a legitimate https self-host URL passes validation and
-    reaches the handler. Verifies the validator allows what should pass
-    (regression guard against an over-strict tightening that would block
+    """Sanity: a legitimate https self-host URL on the allowlist passes
+    validation and reaches the handler. Verifies the validator allows
+    what should pass (regression guard against an over-strict tightening that would block
     actual self-hosted users)."""
     import main, json as _json, urllib.request
     # Mock urlopen so we don't make a real HTTP call to a fake URL
@@ -2951,7 +2951,7 @@ def test_license_activate_accepts_https_server_url(client, monkeypatch):
         def __exit__(self, *a): pass
         def read(self): return _json.dumps({"is_valid": False, "message": "stub"}).encode()
     monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **kw: _Stub())
-    r = main.app  # ensure app loaded
+    monkeypatch.setattr(main, "_LICENSE_EXTRA_SERVERS", ("https://license.example.com",))
     r = client.post("/api/license/activate", json={
         "license_key": "TERN-1234",
         "server_url": "https://license.example.com",

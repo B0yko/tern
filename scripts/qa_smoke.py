@@ -8,7 +8,7 @@ be runnable in CI or by a human "did anything regress?" check.
 
 Usage:
   python3 scripts/qa_smoke.py                       # uses default API endpoint
-  python3 scripts/qa_smoke.py --base http://127.0.0.1:8765  # if you ran with TERN_PORT=8765
+  python3 scripts/qa_smoke.py --base http://127.0.0.1:18800  # if you ran with TERN_PORT=18800
   python3 scripts/qa_smoke.py --base http://...
 
 Exit 0 if all critical checks pass, 1 otherwise.
