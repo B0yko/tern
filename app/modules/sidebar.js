@@ -10,10 +10,10 @@ let _el = null;
 // Cached app version for the license button's "vX.Y.Z" chip. Fetched
 // ONCE at sidebar init from /api/diagnostics (the canonical source —
 // /api/diagnostics reads from pyproject.toml at startup, single source
-// of truth per commit 71d239e). Previously HARDCODED here
+// of truth). Previously HARDCODED here
 // as "v0.1.1" which drifted from the real version (0.1.0 across
 // pyproject.toml, tauri.conf.json, Cargo.toml) — same defect class
-// the 71d239e diagnostics fix corrected, just on a different surface.
+// the diagnostics endpoint avoids, just on a different surface.
 // User saw "v0.1.1" in the sidebar while the ⌘/ keyhelp's About chip
 // and /api/diagnostics correctly reported v0.1.0. Module-level cache
 // because the version never changes during a process lifetime.
@@ -438,7 +438,7 @@ async function _removeFolder(folder) {
   if (!confirm(`Remove "${folder}" from the index?\n\nThis only deletes the search index (transcripts, OCR, embeddings). Your source files on disk are untouched.`)) return;
   try {
     // Use the api.removeFolder helper instead of raw fetch — this gets
-    // the commit d252018 default 60s timeout (which matters here: a big
+    // the default 60s timeout (which matters here: a big
     // folder removal loops cleanup_file per matched file and rmtrees
     // potentially thousands of thumbnail JPEGs; a wedged backend or
     // network-mounted workspace mid-delete used to hang the call

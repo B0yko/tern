@@ -48,7 +48,7 @@ _USER_TOKEN_RE = re.compile(r"\w{2,}")
 # Mirror of SearchEngine._CJK_RANGES — duplicated here (rather than imported
 # from search.py) because storage.py is the lower-level module: search.py
 # already imports from storage, so an `from .search import ...` here would
-# create a circular import. The commit 63ff96b CJK 2-char carve-out lives
+# create a circular import. The CJK 2-char carve-out lives
 # at the BOOST layer (search.py); this brings the same carve-out to the
 # FETCH layer (storage.py search_filename) so a CJK 2-char query no
 # longer gets silently filtered to zero hits BEFORE the boost path even
@@ -65,8 +65,7 @@ _CJK_RANGES = (
 def _token_has_cjk(token: str) -> bool:
     """True if any character is in a CJK / Japanese / Korean script block.
 
-    Used as a length-filter carve-out in search_filename — see the
-    63ff96b commit message for the design rationale: Latin scripts need
+    Used as a length-filter carve-out in search_filename: Latin scripts need
     ≥3 chars to filter stop-words ('if', 'to', 'or'), but CJK packs a full
     morpheme per character, so 2-char words like 会議 (meeting), 予算
     (budget), 회사 (company) are real standalone search terms that
@@ -244,8 +243,8 @@ CREATE TABLE IF NOT EXISTS keyframes (
 CREATE INDEX IF NOT EXISTS idx_keyframes_file ON keyframes(file_id);
 -- Composite (file_id, ts_ms) accelerates search_filename's window-fn
 --   `ROW_NUMBER() OVER (PARTITION BY file_id ORDER BY ts_ms)` query
--- (commit 7d58e0c) — also the /api/files batched first-
--- keyframe lookup (commit a4bf079). Both did a per-file
+-- — also the /api/files batched first-
+-- keyframe lookup. Both did a per-file
 -- scan + sort with the single-column index.
 CREATE INDEX IF NOT EXISTS idx_keyframes_file_ts
     ON keyframes(file_id, ts_ms);
@@ -370,8 +369,8 @@ class Store:
                 "indexed_at": record.indexed_at.isoformat() if record.indexed_at else None,
                 "error": record.error,
                 "metadata": (
-                    # ensure_ascii=False mirrors the fix from commit f1cdbc3 on
-                    # set_file_metadata — without it, HEIC EXIF with Cyrillic
+                    # ensure_ascii=False mirrors set_file_metadata;
+                    # without it, HEIC EXIF with Cyrillic
                     # camera maker / CJK location / accented chars gets stored
                     # as `Ц...` escapes that bloat the column 3-6× and
                     # show as gibberish on direct sqlite3 inspection. Both
@@ -833,9 +832,9 @@ class Store:
         # if the token contains any CJK / Japanese / Korean character
         # (each char is a full morpheme; 会議, 予算, 회사 are legitimate
         # standalone search terms). Mirrors the SearchEngine._apply_
-        # filename_boost token filter from commit 63ff96b — pre-this-
-        # commit that fix was incomplete because search_filename
-        # (the FETCH path) dropped CJK 2-char tokens BEFORE the boost
+        # filename_boost token filter — without it the CJK carve-out
+        # would be incomplete because search_filename
+        # (the FETCH path) would drop CJK 2-char tokens BEFORE the boost
         # path could even see them. Net: a Japanese user searching
         # "会議" got zero filename hits even when a file literally
         # named "会議録_2024.mp4" existed in the index.
@@ -942,7 +941,7 @@ class Store:
         # the search hot path (~10 ms wasted serialization for the default
         # limit=50 even on a fast SSD; worse when SQLite hits the macOS
         # filesystem cache cold after a long idle). One IN-list query is
-        # the same call pattern search_filename adopted in 7d58e0c.
+        # the same call pattern search_filename uses.
         unique_ids = sorted({m["file_id"] for _, _, m in triples})
         path_by_id: dict[int, str] = {}
         if unique_ids:

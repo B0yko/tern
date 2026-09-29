@@ -30,8 +30,8 @@ let _renderReqId = 0;
 // CANCELLED mid-flight, not just discarded after they complete on the
 // backend. Rapid ↓ through 20 hits used to fire 20 SQL queries; the
 // _renderReqId guard discarded 19 responses but the backend still ran
-// each (20× /api/transcript/window = ~30 ms each post commit 53274bf,
-// ~600 ms wasted in aggregate). With AbortController + the commit 8217c1e
+// each (20× /api/transcript/window = ~30 ms each,
+// ~600 ms wasted in aggregate). With AbortController + the
 // api.js signal plumbing, FastAPI's client-disconnect handler cancels
 // the in-flight request within milliseconds. Same end-to-end abort
 // pattern as topbar.js's search-as-you-type cancel.
@@ -113,7 +113,7 @@ async function _render() {
       if (myReq !== _renderReqId) return;
       // AbortError is the expected outcome when the next ↓ keystroke
       // cancelled this fetch — don't log it as a warning. Same pattern
-      // as topbar.js _runSearch (commit 8217c1e).
+      // as topbar.js _runSearch.
       if (e?.name === "AbortError" || /aborted/i.test(e?.message || "")) {
         return;
       }
@@ -197,15 +197,15 @@ function _bindActions(hit) {
 
 // Detail-pane overflow menu (⋯ button on the action bar). Previously had
 // its own custom menu element (.detail-more-menu) + dismiss handlers + Esc
-// wiring. Now reuses the shared contextmenu.js system shipped in 415f0bc:
+// wiring. Now reuses the shared contextmenu.js system:
 // same styling as right-click menus everywhere else, ↑↓ Enter Esc keyboard
 // nav included, auto-flip near viewport edges, no separate CSS.
 function _showMoreMenu(btn, hit) {
   const isMedia = hit.media_kind === "audio" || hit.media_kind === "video";
   const items = [
     // Open in default app — needs the same toast-on-fail wire as the
-    // sibling btn-reveal / btn-quicklook click handlers above (commit
-    // 0b543ab) so a 404 from /api/open (file moved/deleted externally)
+    // sibling btn-reveal / btn-quicklook click handlers above
+    // so a 404 from /api/open (file moved/deleted externally)
     // surfaces as an actionable toast instead of an unhandled promise
     // rejection that just logs to console. Without this catch, the
     // _showMoreMenu's "Open in default app" was the only file-action
@@ -243,8 +243,8 @@ function _showMoreMenu(btn, hit) {
 
 async function _exportSrt(hit) {
   try {
-    // Use api.exportSrt instead of raw fetch — inherits the commit
-    // d252018 default 60 s timeout AND throws on non-2xx instead of
+    // Use api.exportSrt instead of raw fetch — inherits the
+    // default 60 s timeout AND throws on non-2xx instead of
     // silently parsing the error body as if it were a success
     // response. Pre-fix: a 404 (file has no transcript) or 5xx
     // returned `{detail: "..."}` → `r.path` was undefined → the
@@ -435,13 +435,11 @@ export function initDetail() {
     const h = state.selectedHit;
     if (!h?.file_path) return;
     // Symmetric with the visible #btn-reveal click handler above: surface
-    // the rejection via toast. The button got this treatment in the
-    // initial commit but the ⇧⌘R keyboard handler still swallowed
+    // the rejection via toast. The ⇧⌘R keyboard handler must not swallow
     // failures to console.error — same user, same failure (file
-    // moved/deleted between indexing and shortcut press → 404), but
-    // pressing the SHORTCUT got no feedback while CLICKING the button
-    // did. Match the asymmetric behavior so a user can't be confused
-    // about whether the action fired.
+    // moved/deleted between indexing and shortcut press → 404), and
+    // pressing the SHORTCUT must give the same feedback as CLICKING the
+    // button, so a user can't be confused about whether the action fired.
     api.reveal(h.file_path).catch(e =>
       flashToast(`Couldn't reveal: ${e?.message || e}`, { kind: "err", ttl: 3500 })
     );

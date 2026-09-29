@@ -27,7 +27,7 @@ DEFAULT_BASE = "http://127.0.0.1:18765"
 
 # SearchEngine init (triggered by the first /api/search call) downloads the
 # SigLIP-2 model from HuggingFace (~600 MB on a cold runner). The lazy-
-# embedder split (commit 9f1b992) means /api/health, /api/stats, /api/files
+# embedder split means /api/health, /api/stats, /api/files
 # etc. all complete fast — only /api/search is slow on first call. So we
 # track "have we exercised /api/search yet?" separately from "have we made
 # any request yet?". First search call → 300s timeout; everything else 30s.
@@ -142,7 +142,7 @@ def main() -> int:
     qa.check("diagnostics returns version", bool(d.get("version")))
     qa.check("diagnostics has workspace path", bool(d.get("workspace")))
 
-    # ── Version endpoint (commit e151a26) ───────────────────────
+    # ── Version endpoint ───────────────────────
     # Lightweight endpoint that returns ONLY the cached _APP_VERSION
     # constant — no log I/O, no thread offload, no recursion. sidebar.js
     # + keyhelp.js call this on cold start / first ⌘/ press to populate
@@ -196,8 +196,8 @@ def main() -> int:
                  "cancel_requested" in ix,
                  f"keys={list(ix.keys())}")
         # Per-file counters drive the indexing-toast progress bar +
-        # done-toast summary. Commit 8d94687 fixed a stale-progress bug
-        # by adding files_skipped to the dormant state init AND the
+        # done-toast summary. files_skipped is set in
+        # both the dormant state init AND the
         # per-run init — without both, the frontend's
         # `processed = files_done + files_skipped + files_errored`
         # rollup silently treats undefined as 0 and the bar stalls
@@ -242,12 +242,12 @@ def main() -> int:
         qa.skip("/api/index/cancel idle check",
                 "indexing is currently running — refuse to disrupt it")
 
-    # ── License status — used by the sidebar badge + commit 9b0a433
+    # ── License status — used by the sidebar badge and
     # is_valid handling. A regression in /api/license/status shape
     # (missing field, renamed key) would break the badge AND the
     # license modal's "Licensed / Invalid / Unactivated" routing.
     # GET-only + zero side effects, so safe to smoke on every release.
-    qa.section("License status (commit 9b0a433)")
+    qa.section("License status")
     try:
         ls = get(args.base, "/api/license/status")
         # Every response (activated or not) MUST include `status` —
@@ -255,7 +255,7 @@ def main() -> int:
         qa.check("/api/license/status returns 'status' field",
                  "status" in ls,
                  f"keys={list(ls.keys())}")
-        # status is one of three enum values (commit 9b0a433): unactivated,
+        # status is one of three enum values: unactivated,
         # active, invalid. Anything else means the response shape drifted.
         qa.check("/api/license/status status is one of {unactivated, active, invalid}",
                  ls.get("status") in ("unactivated", "active", "invalid"),
@@ -315,10 +315,9 @@ def main() -> int:
                      ":" in top.get("timecode", ""), f"tc={top.get('timecode')}")
 
     # ── Exact-phrase search (quoted query) ────────────────────────
-    # Commits 8603702 / c12bd2b / 1c0a8bf / c1ba469 / aa9d5ad surfaced
-    # the quoted-phrase syntax across the user-facing entry points
-    # (FAQ, search placeholder, README). The capability has
-    # shipped since v1.0 via sanitize_fts_query preserving balanced
+    # The quoted-phrase syntax is surfaced across the user-facing entry
+    # points (FAQ, search placeholder, README). The capability works
+    # via sanitize_fts_query preserving balanced
     # quotes through to FTS5's phrase-match operator. Smoke the live
     # wire to lock the behavior in: a regression in sanitize_fts_query
     # (the strip regex accidentally eats quotes, the balance-quotes
@@ -444,8 +443,8 @@ def main() -> int:
     qa.check("/api/files returns list", isinstance(files.get("files"), list))
     qa.check("/api/files returns >0", len(files.get("files", [])) > 0)
 
-    # ── /api/file/thumbnails — feeds the dual-zoom video trim filmstrip
-    # (commit 3425ede). Backend reads pre-extracted ffmpeg keyframes from
+    # ── /api/file/thumbnails — feeds the dual-zoom video trim filmstrip.
+    # Backend reads pre-extracted ffmpeg keyframes from
     # the workspace/db/thumbnails/file_<id>/ directory. If this regresses,
     # the trim UI silently falls back to a flat gradient and EVERY video
     # search hit gets a degraded crop experience with no test signal in
@@ -491,11 +490,11 @@ def main() -> int:
     # <audio>/<video> src, every thumbnail <img>, and every export download.
     # pytest covers the allowlist gate with in-memory fakes; qa_smoke
     # catches the LIVE-bundle case where prepare_bundle.sh might have
-    # broken something in the actual file-serve middleware (commit
-    # 7cc54f7 _CachedStaticFiles subclass survived the bundle? Commit
-    # 110d0db backtick-trap didn't accidentally take down api/main.py
-    # collection? Both shipped as critical fixes — verify they're alive
-    # in the running sidecar, not just on disk).
+    # broken something in the actual file-serve middleware (did the
+    # _CachedStaticFiles subclass survive the bundle? Did the JS
+    # backtick-trap check keep api/main.py collection alive? Both are
+    # critical, so verify they're alive in the running sidecar, not
+    # just on disk).
     qa.section("/api/file static-serve + path allowlist")
     # Positive case: serve a thumbnail we just got the URL for. The
     # thumbnails endpoint returned URLs in /api/file?path= form, so
@@ -516,7 +515,7 @@ def main() -> int:
     else:
         qa.skip("/api/file thumbnail serve", "no thumbnail URL available")
     # Negative case: /etc/passwd must be refused (403). The allowlist gate
-    # (commit be39d9a) is load-bearing security; a regression here is the
+    # is load-bearing security; a regression here is the
     # difference between "local-first app" and "local exfiltration vector".
     try:
         urllib.request.urlopen(f"{args.base}/api/file?path=/etc/passwd", timeout=5)
@@ -526,14 +525,13 @@ def main() -> int:
                  he.code == 403, f"got HTTP {he.code} (want 403)")
 
     # ── /api/transcript/window + /api/export/srt — both backed by the
-    # same transcript_segments table, both got 2-query SQL refactors in
-    # commits 53274bf + 84bc280 that flipped a full-file Python scan into
-    # SQL OFFSET arithmetic. pytest covers the SQL semantics with
+    # same transcript_segments table, both use 2-query SQL with
+    # OFFSET arithmetic instead of a full-file Python scan. pytest covers the SQL semantics with
     # in-memory fixtures; qa_smoke catches a regression where the live
     # demo workspace's actual ts_ms distribution breaks the matched_index
     # math (e.g., the demo file has only 3 transcript segments → tail
     # clamp behaves differently than the >100-segment pytest fixture).
-    qa.section("Transcript window + SRT export (commits 53274bf + 84bc280)")
+    qa.section("Transcript window + SRT export")
     audio_files = [f for f in (files.get("files") or [])
                    if (f.get("mime") or "").startswith("audio/")]
     if audio_files:
@@ -628,7 +626,7 @@ def main() -> int:
     else:
         qa.skip("bulk export (CSV + FCPXML)",
                 "demo query returned no hits — workspace may be empty")
-    # And: the project_name 200-char cap (commit aaa71d3) must hold for
+    # And: the project_name 200-char cap must hold for
     # both endpoints. 1000-char name → 422 at the Pydantic boundary.
     huge_name = "A" * 1000
     for path in ("/api/export/csv", "/api/export/fcpxml"):

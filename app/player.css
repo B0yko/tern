@@ -532,9 +532,9 @@
   100% { opacity: 0; transform: scaleX(1); }
 }
 /* Snap-flash color variants. The flash now
-   identifies WHICH snap target the handle locked onto — pre-this-
-   commit every snap used the accent color, so a power user
-   dragging fast couldnt tell whether they snapped to the playhead,
+   identifies WHICH snap target the handle locked onto — a single
+   accent color for every snap would leave a power user
+   dragging fast unable to tell whether they snapped to the playhead,
    the match-marker, or a keyframe boundary. The data-snap attr is
    set by _flashSnap from the candidate's label. Colors mirror the
    existing visual identity of each target:

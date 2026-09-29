@@ -155,7 +155,7 @@ fi
 # ALWAYS refresh the bundled `tern` package (idempotent, ~14 KB copy).
 # Was previously inside the `if [ ! -x "$PY_BIN" ]` guard, which meant
 # subsequent rebuilds shipped a stale `tern/` package — code changes to
-# the service_pipeline (e.g. discover_files _SKIP_DIRS fix, 807d696)
+# the service_pipeline (e.g. discover_files _SKIP_DIRS fix)
 # wouldn't reach the .app until someone deleted python/ manually.
 PYSP="$RES/python/lib/python3.11/site-packages"
 rm -f "$PYSP/_editable_impl_tern_service.pth"

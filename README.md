@@ -327,13 +327,6 @@ What is not finished:
   Japanese.
 - **Never started:** face recognition, LAN sync, a mobile client.
 
-## Build history
-
-Tern was built between May and June 2026. This public repository starts
-from a clean snapshot of the source; the development history before it is
-kept private, which is where the commit hashes cited in some comments
-point.
-
 ## License
 
 > [!IMPORTANT]

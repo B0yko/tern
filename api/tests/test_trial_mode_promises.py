@@ -12,8 +12,8 @@ the trial and gets ZERO results, the immediate conclusion is "OCR
 doesn't work" / "visual search doesn't work" / "this app is
 broken."
 
-Commit ea761cc fixed exactly that bug for "slide with $29/month" —
-a placeholder that cued OCR as a feature but matched zero content
+The failure case: a placeholder like "slide with $29/month" that
+cues OCR as a feature but matches zero content
 in the demo workspace. This test pins the invariant so neither:
 
     (a) a future PLACEHOLDER_EXAMPLES edit (add a new example
@@ -181,7 +181,7 @@ def test_every_placeholder_example_matches_demo_workspace(demo_db):
     the demo workspace must have at least one match via transcript,
     OCR, or filename channel. A failure here means a user typing the
     placeholder during trial would see zero results — the exact
-    sellability-kill failure mode commit ea761cc closed."""
+    trial-killing failure mode this test exists to prevent."""
     source = TOPBAR_JS.read_text(encoding="utf-8")
     examples = _parse_placeholder_examples(source)
     assert examples, "couldn't parse any PLACEHOLDER_EXAMPLES — parser broken?"
@@ -203,7 +203,7 @@ def test_every_placeholder_example_matches_demo_workspace(demo_db):
         raise AssertionError(
             "trial-killing placeholder(s): a user types one in the search "
             "box during the trial demo and gets ZERO results — exactly the "
-            "regression commit ea761cc closed. Fix by either:\n"
+            "regression this test guards against. Fix by either:\n"
             "  (1) replacing the placeholder with one that DOES match the "
             "bundled demo (sqlite3 demo/db/tern.db 'SELECT … LIKE …%' to "
             "find a working candidate), or\n"
@@ -243,7 +243,7 @@ def test_onboarding_scare_quoted_phrases_match_demo(demo_db):
     embeds a scare-quoted phrase as an example (e.g. `Find the slide
     with "$29/month"`), a trial user is highly likely to copy that
     phrase into the search box right after dismissing the tour — same
-    sellability-kill failure mode the topbar placeholders are pinned
+    trial-killing failure mode the topbar placeholders are pinned
     against.
 
     Original onboarding copy had THREE such trial-killers on screen 2
@@ -306,8 +306,8 @@ def test_onboarding_parser_self_check():
 
 
 def test_license_modal_offers_licence_request_path_when_unlicensed():
-    """Commit 677bccf put an inline call to action in app/modules/
-    license.js so a trial user who wants a key doesn't have to close
+    """app/modules/license.js has an inline call to action
+    so a trial user who wants a key doesn't have to close
     the modal and go looking for where to get one. Tern has no store,
     so the CTA is a "Request a licence" link to the project's issue
     tracker. This test pins that CTA so a future refactor of
@@ -486,7 +486,7 @@ def test_readme_try_searching_queries_match_demo(demo_db):
             "README `Try searching:` example(s) zero-match the bundled "
             "demo workspace — a reader following the quick-start section "
             "and typing the example verbatim gets ZERO results, same "
-            "failure as commits ea761cc / 2e9e574. Fix by either:\n"
+            "failure as a stale placeholder. Fix by either:\n"
             "  (1) replacing the query with one that DOES match the "
             "demo (sqlite3 demo/db/tern.db 'SELECT … LIKE …%' to find "
             "a working candidate), or\n"
@@ -496,10 +496,10 @@ def test_readme_try_searching_queries_match_demo(demo_db):
 
 
 def test_demo_workspace_file_count_consistent_across_docs(demo_db):
-    """Commit 1b97dfa reconciled a "19 files / ~4 h" drift across the
-    docs (the real demo was 17 files / ~29 min at the time). The drift
-    mechanic is mechanical: someone re-bundles the demo (adds/removes
-    a sample file), updates ONE surface, forgets the others. A reader
+    """The docs must agree on the demo's file count and duration (a
+    "19 files / ~4 h" claim against a real 17 files / ~29 min is the
+    failure case). Drift is mechanical:
+    someone re-bundles the demo (adds/removes a sample file), updates ONE surface, forgets the others. A reader
     sees one number in the README and another in the sidebar.
 
     Pin: every doc that claims a demo-workspace file count MUST agree
@@ -559,13 +559,13 @@ def test_demo_workspace_file_count_consistent_across_docs(demo_db):
             "number in the sidebar. Fix by either updating the "
             "surface to the canonical count, or re-bundling the "
             "demo if the surface's number is the intended one. "
-            "Same drift commit 1b97dfa fixed.\n\n"
+            "This is the drift this test catches.\n\n"
             "Offending surfaces:\n" + "\n".join(failures)
         )
 
 
 def test_empty_state_keeps_media_kind_breakdown():
-    """Commit 4fd45fe added an "11 audio · 3 video · 5 images" line
+    """The empty state shows an "11 audio · 3 video · 5 images" line
     under the library count in the day-N empty state. The breakdown
     is the one moment a user staring at "19 files in library"
     learns Tern handles audio AND video AND photos in one search.
@@ -589,7 +589,7 @@ def test_empty_state_keeps_media_kind_breakdown():
     for field in ("files_audio", "files_video", "files_image"):
         assert field in empty_js, (
             f"empty.js no longer references state.stats.{field} — "
-            f"the commit 4fd45fe media-kind breakdown line is gone "
+            f"the media-kind breakdown line is gone "
             f"(or the backend field was renamed). Without it, the "
             f"day-N library header loses the all-media-types line. "
             f"Restore the field reference OR update "
@@ -601,7 +601,7 @@ def test_empty_state_keeps_media_kind_breakdown():
     # single-kind library doesn't render a redundant solo breakdown.
     assert "kindParts.length >= 2" in empty_js, (
         "empty.js breakdown gate appears to have been changed — the "
-        "commit 4fd45fe rationale was to ONLY render the audio/video/"
+        "rationale is to ONLY render the audio/video/"
         "image breakdown when ≥2 kinds present, so a single-kind "
         "library doesn't get a redundant '11 audio' line that adds "
         "nothing the count already conveys. If you're widening the "
@@ -610,7 +610,7 @@ def test_empty_state_keeps_media_kind_breakdown():
 
 
 def test_prefs_keeps_replay_onboarding_tour_button():
-    """docs/TROUBLESHOOTING.md (commit 432a34e) names the button
+    """docs/TROUBLESHOOTING.md names the button
     verbatim: "click Preferences → Advanced → 'Replay onboarding
     tour…'". A future refactor that simplifies the Advanced section
     by removing the button silently breaks that cross-reference —
@@ -650,10 +650,9 @@ def test_prefs_keeps_replay_onboarding_tour_button():
 
 
 def test_prefs_keeps_copy_diagnostics_for_support_button():
-    """Commit 1551942 added the "Copy diagnostics for support…"
-    button to the prefs popover's Advanced section. Commit a9096d8
-    then surfaced it at the top of the troubleshooting doc (now
-    docs/TROUBLESHOOTING.md) as the FIRST step before filing an
+    """The prefs popover's Advanced section has a "Copy diagnostics for
+    support…" button, and the troubleshooting doc
+    (docs/TROUBLESHOOTING.md) names it as the FIRST step before filing an
     issue ("open Preferences → Advanced → Copy diagnostics for
     support…").
 
@@ -703,9 +702,9 @@ def test_prefs_keeps_copy_diagnostics_for_support_button():
 
 
 def test_license_modal_toasts_on_activate_and_clear_success():
-    """Commit 81e0ffc added success toasts on Activate ("Tern
-    activated — thanks!") and Remove license ("License removed") so
-    the user gets non-local confirmation that their click landed.
+    """Success toasts on Activate ("Tern
+    activated — thanks!") and Remove license ("License removed") give
+    the user non-local confirmation that their click landed.
 
     Previously the only feedback was the modal re-rendering with
     the new state block — local feedback that only lands if the
@@ -721,7 +720,7 @@ def test_license_modal_toasts_on_activate_and_clear_success():
     """
     src = LICENSE_JS.read_text(encoding="utf-8")
     assert 'from "/modules/toast.js"' in src, (
-        "license.js no longer imports flashToast — the commit 81e0ffc "
+        "license.js no longer imports flashToast — the "
         "Activate / Remove success toasts are gone. Restore the "
         "import OR update this test if the toast plumbing moved."
     )
@@ -739,17 +738,16 @@ def test_license_modal_toasts_on_activate_and_clear_success():
 
 
 def test_sidebar_subscribes_to_license_state_changes():
-    """Commit 7be77e6 fixed a real user-visible bug: the sidebar's
-    "Trial mode" → "Licensed" badge wasn't reactive. After a
+    """The sidebar's "Trial mode" → "Licensed" badge must be reactive. After a
     successful activation:
        1. License modal updates with state.license = active
-       2. Toast says "Tern activated — thanks!" (commit 81e0ffc)
+       2. Toast says "Tern activated — thanks!"
        3. Sidebar STAYS on "Trial mode" until some unrelated event
           (next keystroke, bookmark, etc.) triggers a re-render
 
     The user sees the toast + modal say Licensed, then looks at the
     sidebar and sees Trial. Trust friction at the exact moment
-    commits 677bccf + 81e0ffc were designed to remove.
+    the license modal and toast are designed to remove.
 
     The one-line fix was adding `if (k === "license") _render();`
     to the sidebar's subscribe callback. A future "tidy up
@@ -763,7 +761,7 @@ def test_sidebar_subscribes_to_license_state_changes():
     src = (REPO_ROOT / "app" / "modules" / "sidebar.js").read_text(encoding="utf-8")
     assert 'k === "license"' in src, (
         "sidebar.js no longer re-renders on state.license changes "
-        "— the commit 7be77e6 subscriber was removed. After a "
+        "— the subscriber was removed. After a "
         "successful license activation, the 'Trial mode' badge "
         "stays stuck until some unrelated event triggers a "
         "re-render (next search keystroke, bookmark toggle, etc.) "
@@ -776,17 +774,15 @@ def test_sidebar_subscribes_to_license_state_changes():
 
 
 def test_filters_subscriber_persists_sources_on_any_write():
-    """Commit a014d76 fixed a real bug: the empty-state "Search
-    everything" button in results.js assigned state.sources = ALL
-    directly, which updated the in-memory state + re-ran the search
-    BUT skipped the localStorage write. After the user clicked the
-    button, closed the app, and re-opened, filters.loadSources()
-    restored their OLD restricted scope from localStorage — and the
-    next search returned zero results AGAIN. They were back where
-    they started, exactly the state the "Search everything" button
-    promised to fix.
+    """The empty-state "Search everything" button in results.js sets
+    state.sources = ALL directly, which updates the in-memory state and
+    re-runs the search BUT would skip the localStorage write on its own.
+    After the user clicked the button, closed the app, and re-opened,
+    filters.loadSources() would restore their OLD restricted scope from
+    localStorage, and the next search would return zero results AGAIN:
+    exactly the state the "Search everything" button promises to fix.
 
-    Fix was a single-line subscriber in filters.initFilters():
+    A single-line subscriber in filters.initFilters() prevents it:
 
       subscribe((k) => { if (k === "sources") _save(); });
 
@@ -804,7 +800,7 @@ def test_filters_subscriber_persists_sources_on_any_write():
     future cleanup."""
     src = (REPO_ROOT / "app" / "modules" / "filters.js").read_text(encoding="utf-8")
     assert "subscribe" in src and 'k === "sources"' in src and "_save()" in src, (
-        "filters.js no longer has the commit a014d76 subscriber that "
+        "filters.js no longer has the subscriber that "
         "persists state.sources writes via ANY path. The explicit "
         "_save() calls in _toggle() and the popover Reset cover "
         "those paths but NOT the empty-state 'Search everything' "
@@ -820,10 +816,9 @@ def test_filters_subscriber_persists_sources_on_any_write():
 
 
 def test_results_pill_keeps_bulk_csv_export_button():
-    """Commit 4a580cf added an Export CSV button to the bulk-results
-    pill alongside Export FCPXML. Closed a real gap: the docs listed
-    CSV export, but until commit 4a580cf the only way to actually
-    trigger it was via curl.
+    """The bulk-results pill has an Export CSV button alongside Export
+    FCPXML. The docs list CSV export, and without the button the only
+    way to actually trigger it would be curl.
 
     Future risk: a refactor that "consolidates" the bulk pill
     buttons could silently drop CSV again, and the docs that name
@@ -842,7 +837,7 @@ def test_results_pill_keeps_bulk_csv_export_button():
 
     assert "bulk-export-csv" in results_src, (
         "results.js no longer renders the #bulk-export-csv button — "
-        "the commit 4a580cf Export CSV button on the bulk-results "
+        "the Export CSV button on the bulk-results "
         "pill has been removed. The docs still name this export. "
         "Restore the render OR update the docs to match the new UI."
     )
@@ -859,15 +854,15 @@ def test_results_pill_keeps_bulk_csv_export_button():
     assert "exportCsv" in api_src, (
         "api.js no longer exposes the exportCsv helper — the "
         "bulk-CSV button can't call /api/export/csv without going "
-        "back to raw fetch (which skips the commit d252018 timeout / "
+        "back to raw fetch (which skips the timeout / "
         "throw-on-non-2xx / abort-signal plumbing). Restore the "
         "helper."
     )
 
 
 def test_results_pill_keeps_latency_and_file_count_proof():
-    """Commit 078acd2 added "across N files · 0.04s" texture next to
-    the result count in the bulk-results pill. The two pieces:
+    """The bulk-results pill shows "across N files · 0.04s" texture next
+    to the result count. The two pieces:
 
       - latency badge — shows how fast the search actually was at
         the EXACT moment of use ("0.04s" on the first search).
@@ -887,8 +882,8 @@ def test_results_pill_keeps_latency_and_file_count_proof():
 
     # topbar.js must measure and store the round-trip ms.
     assert "state.lastSearchMs" in topbar_src, (
-        "topbar.js no longer assigns state.lastSearchMs — the commit "
-        "078acd2 client-observed latency tracking appears to have been "
+        "topbar.js no longer assigns state.lastSearchMs — the "
+        "client-observed latency tracking appears to have been "
         "removed. Without it, the results pill loses its '0.04s' "
         "badge. Restore the "
         "performance.now() round-trip or update this test if the "
@@ -904,20 +899,20 @@ def test_results_pill_keeps_latency_and_file_count_proof():
     # fragments in the bulk pill.
     assert "state.lastSearchMs" in results_src, (
         "results.js no longer reads state.lastSearchMs — the '0.04s' "
-        "latency badge on the results pill is gone. Commit 078acd2 "
-        "rationale: this is the one user-visible measure of how fast "
+        "latency badge on the results pill is gone. "
+        "Rationale: this is the one user-visible measure of how fast "
         "the search actually was, shown at the moment of use."
     )
     assert "uniqueFiles" in results_src, (
         "results.js no longer computes the unique-file count — the "
-        "'across N files' fragment on the results pill is gone. Commit "
-        "078acd2 rationale: this signals real cross-archive search "
+        "'across N files' fragment on the results pill is gone. Rationale: "
+        "this signals real cross-archive search "
         "depth, which is the point of searching a whole archive."
     )
 
 
 def test_topbar_hides_search_count_while_search_is_in_flight():
-    """Commit 976a0d3 fixed the stale-count flash: while a new search
+    """The topbar must not flash a stale count: while a new search
     is in flight, state.results still holds the PREVIOUS query's hits
     (the new fetch hasn't returned), so the count badge in the topbar
     showed the OLD number for the ~50-200ms search window. User types
@@ -947,7 +942,7 @@ def test_topbar_hides_search_count_while_search_is_in_flight():
     # as long as SOMETHING hides the count.
     assert "count.hidden = true" in topbar_src, (
         "topbar.js no longer hides the search-count badge with a "
-        "`count.hidden = true` line — the commit 976a0d3 fix that "
+        "`count.hidden = true` line — the fix that "
         "stops the previous query's hit count from flashing during "
         "the next search has been removed. User retypes a query, "
         "sees stale '14' for the in-flight window, gets confused. "
@@ -1078,11 +1073,12 @@ def test_keyhelp_meta_shortcuts_actually_bound_in_keyboard_js():
 
 
 def test_sidebar_renders_every_bookmark_not_just_first_six():
-    """Commit 72ccd6b removed a `.slice(0, 6)` that capped the sidebar
-    bookmark list at 6 rows with no scroll and no 'show all' affordance
-    — bookmarks 7-N were rendered nowhere in the DOM, while the count
-    badge ("Bookmarks (30)") promised they existed. A power user who
-    pinned 10+ moments via ⌘⇧B saw the feature silently broken, and
+    """The sidebar must not cap the bookmark list with a `.slice(0, 6)`,
+    which would leave the list at 6 rows with no scroll and no
+    'show all' affordance — bookmarks 7-N would be rendered nowhere in
+    the DOM, while the count badge ("Bookmarks (30)") promises they
+    exist. A power user who pins 10+ moments via ⌘⇧B would see the
+    feature silently broken, and
     a user who finds half the pins gone treats the whole capability
     as half-finished.
 
@@ -1114,8 +1110,8 @@ def test_sidebar_renders_every_bookmark_not_just_first_six():
         raise AssertionError(
             "sidebar.js calls state.bookmarks.slice(...) somewhere — "
             "if this is the bookmark-list render path, it re-caps the "
-            "list and hides rows 7-N from the user (commit 72ccd6b "
-            "regression). If the slice is for an unrelated reason "
+            "list and hides rows 7-N from the user (the "
+            "six-row cap regression). If the slice is for an unrelated reason "
             "(e.g., a preview), refactor so the list render stays "
             "uncapped OR update this pin with the new render shape."
         )
@@ -1126,7 +1122,7 @@ def test_sidebar_renders_every_bookmark_not_just_first_six():
     #    the visible viewport (.sidebar is overflow:hidden).
     assert 'class="sb-sec-scroll"' in sidebar_src, (
         "sidebar.js no longer wraps the bookmark rows in a "
-        "<div class=\"sb-sec-scroll\"> — the commit 72ccd6b fix that "
+        "<div class=\"sb-sec-scroll\"> — the fix that "
         "made the list scroll inside its section has been undone. "
         "Without the wrapper the unbounded list pushes Saved + Recent "
         "below the visible viewport (since the parent .sidebar is "
@@ -1153,8 +1149,8 @@ def test_sidebar_renders_every_bookmark_not_just_first_six():
 
 
 def test_sidebar_trial_badge_surfaces_activate_cta():
-    """Commit 1a8ba53 reframed the sidebar footer badge from a passive
-    'Trial mode' status indicator into an action: 'Trial mode · Activate'
+    """The sidebar footer badge is an action rather than a passive
+    'Trial mode' status indicator: 'Trial mode · Activate'
     with the '· Activate' fragment styled in the accent color via the
     .sb-license-cta class. Pre-fix, a trial user looking at the always-
     visible badge had no signal that clicking it opens the license
@@ -1183,7 +1179,7 @@ def test_sidebar_trial_badge_surfaces_activate_cta():
     # the word OR the class disappears, the regex fails.
     assert "sb-license-cta" in sidebar_src, (
         "sidebar.js no longer references the .sb-license-cta span — "
-        "the commit 1a8ba53 trial badge 'Activate' hint has been "
+        "the trial badge 'Activate' hint has been "
         "removed or refactored away. A trial user looking at the "
         "always-visible badge again has no visible affordance that "
         "clicking opens the license modal. "
@@ -1217,8 +1213,7 @@ def test_prefs_advanced_keeps_license_button():
     how most macOS apps surface activation in their preferences pane.
     Before it existed Preferences had no License entry — and the docs
     told users to look there anyway, sending them on a wild goose
-    chase (commits 7fbd415 + a758115 fixed both copy mistakes by
-    pointing at the sidebar badge instead).
+    chase (the copy points at the sidebar badge instead).
 
     Now the path is real. Three discoverable entry points to the
     license modal:
@@ -1228,8 +1223,8 @@ def test_prefs_advanced_keeps_license_button():
 
     Pin the third entry against silent removal: a future change that
     tidies the Advanced section might drop the License button as
-    'redundant', which silently re-creates the bug class commit
-    7fbd415 fixed (a doc instruction that matches no UI). Two
+    'redundant', which silently re-creates the bug class of
+    a doc instruction that matches no UI. Two
     structural assertions:
 
       1. prefs.js renders an id="prefs-license" button (the actual
@@ -1267,8 +1262,8 @@ def test_prefs_advanced_keeps_license_button():
 
 
 def test_empty_hero_doesnt_render_hardcoded_query_pills_on_empty_workspace():
-    """Commit 9f86edb removed the DEMO_QUERIES array from empty.js. The
-    array used to seed the day-1 empty-workspace hero with six clickable
+    """empty.js must not declare a DEMO_QUERIES array. Such an
+    array would seed the day-1 empty-workspace hero with six clickable
     pills (pricing strategy, Series A funding, first hire, orange cat,
     mountain lake, rabbit in a forest). Clicking ANY of them on a
     workspace with 0 indexed files fired a search that returned 0 hits
@@ -1303,8 +1298,8 @@ def test_empty_hero_doesnt_render_hardcoded_query_pills_on_empty_workspace():
     import re
     if re.search(r"\bconst\s+DEMO_QUERIES\s*=\s*\[", empty_src):
         raise AssertionError(
-            "empty.js declares a const DEMO_QUERIES array — the commit "
-            "9f86edb removal has been undone. If left alone the hero "
+            "empty.js declares a const DEMO_QUERIES array — the "
+            "removal has been undone. If left alone the hero "
             "renders the array as clickable pills, every one of which "
             "guarantees a 0-results dead-end on a workspace with no "
             "indexed files. If you intentionally need a hardcoded "
@@ -1314,7 +1309,7 @@ def test_empty_hero_doesnt_render_hardcoded_query_pills_on_empty_workspace():
         )
 
     # 2. The pills array must be empty when there are no recents.
-    # The commit 9f86edb pattern is `hasRecents ? state.recents.slice(...) : []`.
+    # The pattern is `hasRecents ? state.recents.slice(...) : []`.
     # An obvious regression is `: SOMETHING_HARDCODED` instead of `: []`.
     # Scan for the ternary's else-branch and require it to be a literal
     # empty array.
@@ -1335,9 +1330,9 @@ def test_empty_hero_doesnt_render_hardcoded_query_pills_on_empty_workspace():
 
 
 def test_indexing_progress_counts_skipped_files_toward_processed():
-    """Commit 8d94687 fixed the progress bar stalling under 100% when
-    re-indexing a folder where most files were already up-to-date.
-    Backend now tracks files_skipped alongside files_done /
+    """The progress bar must reach 100% when re-indexing a folder
+    where most files were already up-to-date.
+    Backend tracks files_skipped alongside files_done /
     files_errored; the frontend rolls them into a `processed` count
     so the bar reaches 100%, the in-progress title matches the bar,
     the done toast surfaces 'N already up-to-date', and ETA stops
@@ -1378,7 +1373,7 @@ def test_indexing_progress_counts_skipped_files_toward_processed():
         "regression at first (returns 0) until a re-indexing run "
         "actually starts incrementing a non-existent key, which "
         "silently no-ops. Bar stalls, ETA over-estimates, done toast "
-        "under-counts — the exact bug commit 8d94687 fixed."
+        "under-counts — the exact bug this test pins."
     )
 
     # Backend increment: the else branch of the indexing loop must
@@ -1400,7 +1395,7 @@ def test_indexing_progress_counts_skipped_files_toward_processed():
     # Without it, only files_done counts and the bar stalls again.
     assert "files_skipped" in indexing_js, (
         "app/modules/indexing.js no longer references s.files_skipped "
-        "— the commit 8d94687 fix that made the bar reach 100% on "
+        "— the fix that made the bar reach 100% on "
         "mixed batches has been undone. The frontend reverted to "
         "computing pct from files_done alone, so re-indexing a "
         "folder where most files were already done stalls the bar "
@@ -1421,9 +1416,9 @@ def test_indexing_progress_counts_skipped_files_toward_processed():
 
 
 def test_indexing_done_toast_doesnt_claim_success_when_all_files_failed():
-    """Commit f2ff5f2 fixed a trust-killer in the done toast: when
-    every file in a batch failed (done === 0 && errs > 0), the
-    sub-text still cheerfully said 'Search updated with the new
+    """The done toast must not claim success: when every file in a
+    batch failed (done === 0 && errs > 0), the sub-text must not
+    cheerfully say 'Search updated with the new
     files.' A user dragged a folder, indexer rejected every file
     (codec, path, permission), toast claimed success, the user assumed
     Tern was broken instead of looking at the log.
@@ -1447,7 +1442,7 @@ def test_indexing_done_toast_doesnt_claim_success_when_all_files_failed():
     # default.
     assert "failed to index" in indexing_js, (
         "app/modules/indexing.js no longer contains 'failed to index' "
-        "anywhere — the commit f2ff5f2 all-files-failed sub-text branch "
+        "anywhere — the all-files-failed sub-text branch "
         "is gone. The done toast will silently revert to 'Search "
         "updated with the new files' even when nothing actually "
         "indexed. Restore the conditional in _renderDoneToast or "
@@ -1459,11 +1454,11 @@ def test_indexing_done_toast_doesnt_claim_success_when_all_files_failed():
     # Without it, the user is just told 'failed' with no path forward.
     assert "tern-crash.log" in indexing_js, (
         "app/modules/indexing.js no longer references tern-crash.log "
-        "in the done-toast sub-text — the actionable log pointer the "
-        "commit f2ff5f2 fix added has been removed. The user sees "
+        "in the done-toast sub-text — the actionable log pointer "
+        "has been removed. The user sees "
         "'failed' without a path to the per-file errors. Restore "
         "the pointer (the indexer writes per-file errors via "
-        "log_event('index_file_failed', ...) — commit 8377671)."
+        "log_event('index_file_failed', ...))."
     )
 
     # The conditional that branches on outcome must still exist.
@@ -1482,15 +1477,14 @@ def test_indexing_done_toast_doesnt_claim_success_when_all_files_failed():
 
 
 def test_empty_state_surfaces_files_errored_when_nonzero():
-    """Commit 4e3dfa3 added files_errored to /api/stats and commit
-    7feba3b wired it into the empty-state library header. The
-    persistent error count (status='error' rows in the files table,
-    accumulating across runs) is now visible as a "⚠ N files failed
+    """/api/stats reports files_errored and the empty-state library
+    header uses it. The persistent error count (status='error' rows in the files table,
+    accumulating across runs) is visible as a "⚠ N files failed
     to index" line below the kind breakdown when errored > 0.
 
     Three load-bearing pieces:
-      1. storage.stats() returns the files_errored field (commit
-         4e3dfa3 SQL aggregate)
+      1. storage.stats() returns the files_errored field (SQL
+         aggregate)
       2. empty.js reads s.files_errored
       3. empty.js renders the warning line when erroredCount > 0
 
@@ -1509,7 +1503,7 @@ def test_empty_state_surfaces_files_errored_when_nonzero():
     # uses CASE WHEN status='error' — pin both ends.
     assert "files_errored" in storage_src, (
         "service_pipeline/tern/storage.py no longer references "
-        "files_errored — the SQL aggregate that commit 4e3dfa3 added "
+        "files_errored — the SQL aggregate "
         "for /api/stats has been removed. The empty-state warning "
         "line + qa_smoke stats pin both depend on this field; "
         "restore the SQL CASE clause or update this test."
@@ -1520,7 +1514,7 @@ def test_empty_state_surfaces_files_errored_when_nonzero():
     # either piece.
     assert "files_errored" in empty_js, (
         "app/modules/empty.js no longer references s.files_errored "
-        "— the commit 7feba3b empty-state warning line that surfaces "
+        "— the empty-state warning line that surfaces "
         "the persistent indexing-error count has been removed. The "
         "user accumulates indexing failures across runs with no "
         "in-app signal. Restore the conditional rendering in "
@@ -1654,9 +1648,9 @@ def test_saved_searches_snapshot_scope_for_restoration():
     )
 
 
-def test_trim_widget_recent_features_load_bearing_pieces():
-    """Commits 8ca914d → a89f794 shipped five trim-widget improvements
-    in a row, each closing a real user-visible gap. The README
+def test_trim_widget_load_bearing_pieces():
+    """The trim widget has five user-visible features, each closing a
+    real gap. The README
     describes the trim editor (dual-zoom timeline, keyframe snapping,
     frame stepping), so a regression in any of these silently makes
     that description false.
@@ -1665,11 +1659,11 @@ def test_trim_widget_recent_features_load_bearing_pieces():
     future refactor that "simplifies" the trim widget can't drop any
     of them silently:
 
-      8ca914d  band clamp + chevron + trackpad pan + overview wheel
-      528e5d6  floating duration badge inside the band
-      34c48aa  right-click context menu (Reset / Fit / Zoom / Copy)
-      3539886  inline IN/OUT validation toast + shake pulse
-      a89f794  snap-to-keyframe-boundary
+      - band clamp + chevron + trackpad pan + overview wheel
+      - floating duration badge inside the band
+      - right-click context menu (Reset / Fit / Zoom / Copy)
+      - inline IN/OUT validation toast + shake pulse
+      - snap-to-keyframe-boundary
 
     Each assertion below catches a different regression class. The
     string-match approach is intentionally permissive — a refactor
@@ -1679,7 +1673,7 @@ def test_trim_widget_recent_features_load_bearing_pieces():
     player_js  = (REPO_ROOT / "app" / "modules" / "player.js").read_text(encoding="utf-8")
     player_css = (REPO_ROOT / "app" / "player.css").read_text(encoding="utf-8")
 
-    # 8ca914d: band clamp via Math.max/min into [0%, 100%]
+    # band clamp via Math.max/min into [0%, 100%]
     assert "bandLeftPct" in player_js and "bandRightPct" in player_js, (
         "player.js no longer clamps the band to bandLeftPct / "
         "bandRightPct — when the clip extends past the viewport, "
@@ -1689,14 +1683,14 @@ def test_trim_widget_recent_features_load_bearing_pieces():
         "in _layoutAndPublish."
     )
 
-    # 8ca914d: chevron CSS at the clamped edge
+    # chevron CSS at the clamped edge
     assert 'data-clipped-left="1"' in player_css and 'data-clipped-right="1"' in player_css, (
         "player.css no longer styles the clipped-edge chevron — the "
         "user loses the visual cue that the selection continues past "
         "the viewport edge."
     )
 
-    # 8ca914d: trackpad pan shared helper + the overview wheel listener
+    # trackpad pan shared helper + the overview wheel listener
     assert "_panViewByPx" in player_js, (
         "player.js no longer defines _panViewByPx — the shared "
         "trackpad-pan helper used by both the working-strip and "
@@ -1710,16 +1704,16 @@ def test_trim_widget_recent_features_load_bearing_pieces():
         "rectangle for the same gesture)."
     )
 
-    # 528e5d6: floating duration badge in the band
+    # floating duration badge in the band
     assert "vtrim-work-band-dur" in player_js and "vtrim-work-band-dur" in player_css, (
-        "Floating duration badge (commit 528e5d6) missing from either "
+        "Floating duration badge missing from either "
         "player.js (the DOM hook) or player.css (the pill styling). "
         "Final Cut / Premiere / CapCut convention is to show clip "
         "duration centered on the timeline rectangle — losing it "
         "downgrades the trim widget against what the README describes."
     )
 
-    # 34c48aa: right-click context menu
+    # right-click context menu
     assert 'work.addEventListener("contextmenu"' in player_js, (
         "player.js no longer wires the right-click context menu on "
         "the working strip — Reset / Fit / Zoom / Copy actions stop "
@@ -1727,14 +1721,14 @@ def test_trim_widget_recent_features_load_bearing_pieces():
         "memory (Final Cut / Premiere / DaVinci / CapCut)."
     )
 
-    # 3539886: input validation toast + invalid-pulse class
+    # input validation toast + invalid-pulse class
     assert "vtrim-input-invalid" in player_js and "vtrim-input-invalid" in player_css, (
-        "Inline IN/OUT validation (commit 3539886) missing — typed "
+        "Inline IN/OUT validation missing — typed "
         "unparseable timecodes silently revert again instead of "
         "toasting + shake-pulsing the offending input."
     )
 
-    # a89f794: snap-to-keyframe candidates
+    # snap-to-keyframe candidates
     assert '"keyframe"' in player_js or "label: 'keyframe'" in player_js, (
         "player.js _maybeSnap no longer pushes a 'keyframe' candidate "
         "— handles stop snapping to the actual thumbnail-edge ts_ms "
@@ -1743,16 +1737,16 @@ def test_trim_widget_recent_features_load_bearing_pieces():
         "in the candidate-build block."
     )
 
-    # cb69cd4: zoom-level indicator in the info row
+    # zoom-level indicator in the info row
     assert "vtrim-zoom-level" in player_js and "vtrim-zoom-level" in player_css, (
-        "Zoom-level indicator (commit cb69cd4) missing from either "
+        "Zoom-level indicator missing from either "
         "player.js (the DOM hook) or player.css (the muted-mono "
         "styling). Without it a scroll-zoom past the 4s floor reads "
         "as 'the widget is broken' instead of 'youre zoomed in too "
         "far — click ⤡ or scroll to zoom out'."
     )
 
-    # 62af077: native hover tooltip on the working strip
+    # native hover tooltip on the working strip
     assert "work.title" in player_js, (
         "player.js no longer assigns work.title in _layoutAndPublish "
         "— the hover tooltip that surfaces full clip range + off-"
@@ -1761,10 +1755,10 @@ def test_trim_widget_recent_features_load_bearing_pieces():
         "past the visible viewport."
     )
 
-    # 6bc43a2: snap color-coding via data-snap attribute
+    # snap color-coding via data-snap attribute
     assert "snapFlash.dataset.snap" in player_js, (
         "player.js no longer sets snapFlash.dataset.snap — the "
-        "color-coded snap-flash variants (commit 6bc43a2) are no "
+        "color-coded snap-flash variants are no "
         "longer driven by the data-snap attr, so all snaps re-flash "
         "in the same accent color and users lose the visual "
         "differentiation between playhead / match / keyframe snaps."
@@ -1776,7 +1770,7 @@ def test_trim_widget_recent_features_load_bearing_pieces():
         "selectors or expect every snap to flash blue."
     )
 
-    # 1ed1f02: Shift-bypass snap during handle drag
+    # Shift-bypass snap during handle drag
     assert "lastShift" in player_js, (
         "player.js no longer tracks lastShift in the handle-drag "
         "closure — the standard-NLE Shift-bypass-snap escape hatch "

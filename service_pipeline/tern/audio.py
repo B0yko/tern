@@ -102,7 +102,7 @@ _WHISPER_MODEL_URLS = {
 # is ~75 MB, base.en is ~141 MB. 50 MB is well below the smallest while
 # still safely catching the "HF returned an HTML maintenance page" or
 # "connection dropped at 5 MB" failure modes. Same defence as the
-# prepare_bundle.sh check added in commit 726ca0a.
+# prepare_bundle.sh check.
 _WHISPER_MODEL_MIN_BYTES = 50 * 1024 * 1024  # 50 MB
 
 
@@ -207,7 +207,7 @@ class WhisperTranscriber:
         # child + raise RuntimeError so the indexer's outer try/except
         # treats the file as errored and continues with the next one.
         # Pre-this-attr: cancel-during-file was no-op until the file
-        # finished naturally. With the commit b180c42 timeout, "finishes
+        # finished naturally. With the timeout, "finishes
         # naturally" can be HOURS for a multi-hour audio — Cancel meant
         # "wait up to wait_timeout seconds before the loop can react."
         # Polled at 1 Hz inside the wait loop so a cancel request shows
@@ -283,7 +283,7 @@ class WhisperTranscriber:
             # Bounded ring buffer for stderr lines. Pre-fix this was a
             # plain list that grew until proc.wait returned — fine for
             # healthy runs (~500 lines on a 5-min audio) but with the
-            # commit b180c42 timeout, the wait can now be HOURS for a
+            # timeout, the wait can now be HOURS for a
             # multi-hour audio file. A malformed whisper-cli stuck in
             # a tight loop printing 1 MB/s to stderr would balloon the
             # list to GBs and OOM-kill the python sidecar (taking down
@@ -328,7 +328,7 @@ class WhisperTranscriber:
             # Poll the subprocess in 1-second chunks so a cancel_cb can
             # take effect mid-file. Pre-this-loop the wait was a single
             # `proc.wait(timeout=wait_timeout)` — for a 6-hour audio
-            # file under the commit b180c42 timeout that meant cancel
+            # file under the timeout that meant cancel
             # could be queued for up to 6 HOURS before the indexer's
             # between-files check noticed. The 1 Hz cancel poll means
             # Cancel takes effect within ~1 s instead.
@@ -463,12 +463,9 @@ class WhisperTranscriber:
         """Convert a Whisper JSON offset value to int milliseconds.
 
         Whisper-cli emits offsets as integers (ms) in its JSON output, but
-        the parser is defensive: pre-this-comment-cleanup, the docstring
-        claimed timestamp-string support ("00:01:23.456") which the code
-        does NOT implement — `int("00:01:23.456")` raises ValueError and
-        returns None. That mismatch was misleading (a maintainer reading
-        the docstring would assume timestamp parsing existed), so the
-        comment is now removed.
+        the parser is defensive. Timestamp strings ("00:01:23.456") are NOT
+        supported — `int("00:01:23.456")` raises ValueError and returns
+        None.
 
         Accepts:
           * None → None (Whisper JSON sometimes omits the field)

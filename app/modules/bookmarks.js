@@ -19,13 +19,13 @@ function _load() {
 }
 function _persist(arr) {
   const trimmed = arr.slice(0, LIMIT);
-  // Same diagnostic-trail rationale as saved.js _persist — pre-this-
-  // commit a QuotaExceededError or SecurityError vanished into a bare
+  // Same diagnostic-trail rationale as saved.js _persist — otherwise
+  // a QuotaExceededError or SecurityError vanishes into a bare
   // catch{}. The in-memory state.bookmarks stayed current so the
   // session looked fine, but bookmarks silently disappeared on next
   // app launch. Surface the failure to WebKit devtools so support
   // diagnostics ("open Inspector → Console") has something to read.
-  // Matches empty.js (commit f8f2e19) + saved.js.
+  // Matches empty.js + saved.js.
   try { localStorage.setItem(KEY, JSON.stringify(trimmed)); }
   catch (e) { console.error("bookmark persist failed", e); }
   state.bookmarks = trimmed;

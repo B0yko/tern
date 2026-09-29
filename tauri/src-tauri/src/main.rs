@@ -353,8 +353,8 @@ fn main() {
             let path = format!("{}:{}", bin_dir.display(), path);
             dlog(&format!("PATH = {}", path));
 
-            // Pick a free port. Preferred = 18765, matching run.sh
-            // (commit 9b6ae4a), scripts/dev_check.sh, and
+            // Pick a free port. Preferred = 18765, matching run.sh,
+            // scripts/dev_check.sh, and
             // qa_smoke.py's DEFAULT_BASE — one canonical default
             // across every entry point. The original 8765 collided
             // with other local dev tooling that also defaults to it;
@@ -484,11 +484,10 @@ fn main() {
             // App-level exit hook. Verified live: Cmd-Q /
             // AppleScript `quit app "Tern"` / Dock right-click → Quit do
             // NOT fire WindowEvent::CloseRequested — the app tears down
-            // through the run loop's exit path instead, and pre-this-
-            // commit the sidecar survived every normal quit. That — not
+            // through the run loop's exit path instead, so without this hook
+            // the sidecar would survive every normal quit. That — not
             // force-quit — is the most common way users close Mac apps,
-            // so this was the PRIMARY 5 GB-per-quit leak path behind the
-            // 3-orphans-for-days report. RunEvent::Exit is the last
+            // so it would be the PRIMARY 5 GB-per-quit leak path. RunEvent::Exit is the last
             // userspace callback on ALL graceful exit paths (Cmd-Q,
             // window close, menu quit); kill_sidecar's Mutex take() is
             // idempotent so double-fire with CloseRequested is harmless.

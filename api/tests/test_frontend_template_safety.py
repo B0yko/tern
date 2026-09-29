@@ -4,10 +4,8 @@
 WHY THIS TEST EXISTS
 ====================
 
-Commit 110d0db fixed a CRITICAL bug introduced one commit earlier
-(e43ae7b). The popover-removal commit replaced a deleted HTML chunk
-with an explanatory HTML comment that included a code snippet wrapped
-in backticks:
+A CRITICAL failure mode: an explanatory HTML comment that includes a
+code snippet wrapped in backticks:
 
     <!-- ... via `video.currentTime = nextT` in the drag handler ... -->
 
@@ -164,9 +162,9 @@ def _line_of(source: str, idx: int) -> int:
 def _gather_module_files() -> list[Path]:
     """All .js files under app/modules/, excluding iCloud-dupe ` 2.js`
     siblings (Finder's iCloud Drive duplicate-naming convention —
-    they're not shipped; commit 0c7af83 prepare_bundle.sh excludes
-    them from rsync and commit 37102e4 .gitignore excludes them from
-    git tracking; tests should ignore them too)."""
+    they're not shipped; prepare_bundle.sh excludes them from rsync
+    and .gitignore excludes them from git tracking; tests should
+    ignore them too)."""
     if not APP_MODULES.is_dir():
         pytest.skip(f"frontend module dir not present: {APP_MODULES}")
     return sorted(
@@ -183,8 +181,8 @@ def test_no_nested_backticks_in_innerhtml_templates():
     A nested backtick closes the outer template prematurely. Node's
     parser accepts the result (silently mangled string); WebKit's
     JavaScriptCore rejects it with "Unexpected identifier" at runtime,
-    breaking whatever pane renders that template. See commit 110d0db
-    for the real-world incident this test guards against.
+    breaking whatever pane renders that template. The whole pane
+    fails to render when this happens.
     """
     failures: list[str] = []
     for module in _gather_module_files():
@@ -204,8 +202,8 @@ def test_no_nested_backticks_in_innerhtml_templates():
     if failures:
         raise AssertionError(
             "Nested backticks found inside innerHTML template literals — "
-            "these will silently break WKWebView at runtime (see commit "
-            "110d0db). Fix by removing the backticks or restructuring the "
+            "these will silently break WKWebView at runtime (the "
+            "template literal closes early). Fix by removing the backticks or restructuring the "
             "template:\n\n  " + "\n  ".join(failures)
         )
 
@@ -241,22 +239,19 @@ def test_template_finder_self_check():
 
 
 def test_every_module_parses_cleanly_as_es_module():
-    """Commit 7d4c9c3 caught a shipped bug: app/modules/results.js had
-    two `const stats = state.stats;` declarations in the same function
-    scope, introduced by overlapping commits (705f5d7 + 7685fad). The
+    """A module with two `const stats = state.stats;` declarations in
+    the same function scope must be caught. The
     duplicate `const` is a parse-time SyntaxError in ES modules — but
     plain `node --check FILE` accepts it (V8 defaults to script-mode
     parsing). The error only surfaces with `node --check
     --input-type=module < FILE`, which forces module-mode parsing and
     matches what WKWebView's JavaScriptCore does at runtime.
 
-    Without this pin, the bug shipped through every commit since
-    7685fad and would have re-shipped on the next refactor that
-    re-introduces the same name collision. WKWebView SHOULD have
-    failed to load results.js on every launch — the empty-state
-    codepath rarely runs in practice (most users have a non-empty
-    workspace and queries that return hits) so the breakage stayed
-    silent until someone happened to open it.
+    Without this pin, a refactor that introduces such a name collision
+    ships unnoticed. WKWebView fails to load the module on every
+    launch, yet the empty-state codepath rarely runs in practice (most
+    users have a non-empty workspace and queries that return hits) so
+    the breakage stays silent until someone happens to open it.
 
     The pin runs `node --check --input-type=module < FILE` on every
     .js file under app/modules/ (excluding iCloud-dupe ` 2.js`
@@ -309,8 +304,8 @@ def test_every_module_parses_cleanly_as_es_module():
             "One or more app/modules/*.js files fail to parse as an "
             "ES module — WKWebView will fail to load them at runtime, "
             "breaking whatever UI surface depends on the module. Same "
-            "class of bug as the commit 7d4c9c3 duplicate-const in "
-            "results.js that silently shipped for several commits. Fix "
+            "class of bug as the duplicate-const in "
+            "results.js that silently passes review. Fix "
             "the parse error reported below, then re-run the test.\n\n"
             "Offending modules:\n" + "\n".join(failures)
         )
@@ -320,7 +315,7 @@ def test_lint_catches_synthetic_nested_backtick():
     """Drop a synthetic nested-backtick string through the lint
     pipeline and confirm it gets flagged. Guards against a future
     "let's tighten the regex" change that accidentally narrows the
-    detector and silently lets the next 110d0db slip through."""
+    detector and silently lets the next nested backtick slip through."""
     bad_src = (
         'function render(c) {\n'
         '  c.innerHTML = `\n'

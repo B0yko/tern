@@ -120,7 +120,7 @@ def test_embed_text_cache_move_to_end_on_access(naked_embedder):
 
 
 def test_embed_text_recovers_from_concurrent_eviction_race(naked_embedder, monkeypatch):
-    """Commit 2004b15: cache lookup races with cache eviction across
+    """Cache lookup races with cache eviction across
     threads. The sequence that's now defended against:
 
       Thread A: cached = self._text_cache.get(text)  →  returns value
@@ -166,7 +166,7 @@ def test_embed_text_recovers_from_concurrent_eviction_race(naked_embedder, monke
     monkeypatch.setattr(emb._text_cache, "move_to_end", _raise_once)
 
     # This call hits the race: .get() returns the cached value, but
-    # move_to_end raises KeyError. The commit 2004b15 fix catches the
+    # move_to_end raises KeyError. The implementation catches the
     # KeyError and falls through to the cold-path recompute. Must
     # NOT raise an exception.
     v2 = emb.embed_text("orange cat")

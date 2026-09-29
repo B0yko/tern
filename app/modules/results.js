@@ -121,7 +121,7 @@ function _renderEmpty() {
   // on the empty-state hero — the phonetic-keyword tip is useless
   // advice for a user who literally has 0 files indexed. Send them
   // to the actual fix (index a folder) instead. Re-uses state.stats
-  // (same field the commit 705f5d7 library subtitle reads) so the
+  // (same field the library subtitle reads) so the
   // detection is consistent across both surfaces.
   const stats = state.stats;
   const workspaceEmpty = stats && (stats.files_total || 0) === 0;
@@ -140,7 +140,7 @@ function _renderEmpty() {
   // as "search works, this query just didn't match" and softens
   // the trust friction at the exact moment buyers conclude
   // an app doesn't work. Uses the same total_duration_ms +
-  // files_total fields that the commit ee08d2d empty-state
+  // files_total fields that the empty-state
   // breakdown reads, so the data is already in flight on every
   // workspace with any indexed content. Skips silently if
   // state.stats hasn't loaded yet (no point rendering "0 files")
@@ -152,9 +152,9 @@ function _renderEmpty() {
   // in the same function scope, which is a parse-time SyntaxError
   // in ES modules (verified: `node --input-type=module -e ...`
   // throws "Identifier 'stats' has already been declared"). The
-  // bug shipped from commit 7685fad which added the workspace-empty
-  // detection block above without realizing the same name was
-  // already in use further down by commit 705f5d7. WKWebView
+  // bug came from adding the workspace-empty detection block above
+  // without realizing the same name was already in use further
+  // down. WKWebView
   // SHOULD have failed to load results.js on launch — the fact
   // that the app appeared to run means either the empty-state
   // codepath rarely runs in practice or the bundle copies were
@@ -352,8 +352,8 @@ function _onRowContextMenu(ev, hit, i) {
       // dispatched by detail.js as api.reveal(state.selectedHit.file_path).
       // The label MUST match the binding — a user who reads "⌘R" and tries
       // it gets nothing (Safari-style reload is also unbound) and assumes
-      // the menu lied. Commit 5de1191/bf2c0b5/2d92fe2 cluster fixed reliability
-      // surface; this fixes the keyboard-shortcut promise surface.
+      // the menu lied. The backend timeout handling covers the reliability
+      // surface; this covers the keyboard-shortcut promise surface.
       shortcut: "⇧⌘R",
       onClick: () => api.reveal(hit.file_path).catch(e =>
         flashToast(`Couldn't reveal: ${e?.message || e}`, { kind: "err", ttl: 3500 })
@@ -456,7 +456,7 @@ function _fallbackCopy(text) {
 
 // Disable + relabel a bulk-pill export button during the await so
 // an impatient buyer can't double-click and fire a second backend
-// pass. Same pattern as detail.js _exportClip (commit 5e4c69c) and
+// pass. Same pattern as detail.js _exportClip and
 // license.js _activate. Returns a restore function the caller MUST
 // invoke in a finally block — the button stays disabled until the
 // caller cleans up. Defensive: skips when the button isn't in the
@@ -509,7 +509,7 @@ async function _bulkExportCsv() {
 async function _bulkExportFcpxml() {
   if (!state.results.length) return;
   const projectName = state.query ? `Tern · ${state.query}` : "Tern Results";
-  // Disable + relabel during the await — same commit 5e4c69c rationale
+  // Disable + relabel during the await — same rationale
   // as _bulkExportCsv above. FCPXML is the worst-case multi-click
   // target because it shells out to ffprobe per UNIQUE source file
   // (up to 30 s ceiling each); a buyer impatient with a 50-hit
@@ -518,8 +518,8 @@ async function _bulkExportFcpxml() {
   const restore = _bulkBtnLoading("bulk-export-fcpxml", "Exporting…");
   try {
     // Use api.exportFcpxml instead of raw fetch — same migration rationale
-    // as commits bbb1949 (sidebar.removeFolder), d1dd13c (detail.exportSrt),
-    // and 1d271a2 (license.activate/clear). Three things this inherits
+    // as sidebar.removeFolder, detail.exportSrt and
+    // license.activate/clear. Three things this inherits
     // from api.js _json that the raw fetch didn't have:
     //   - 60 s default timeout (matters: FCPXML generation shells out
     //     to ffprobe per UNIQUE source file in the result set, so a
@@ -543,7 +543,7 @@ async function _bulkExportFcpxml() {
       flashToast(`FCPXML ready in Finder — ${state.results.length} hit${state.results.length === 1 ? "" : "s"}`,
                  { kind: "ok" });
       // Reveal in Finder — wire toast-on-fail just like every other
-      // api.reveal call (commit 0b543ab pattern). Previously the
+      // api.reveal call (same pattern). Previously the
       // reveal was fire-and-forget; if it failed (workspace exports/
       // dir vanished, perms changed, etc.), the user got the success
       // toast above but Finder didn't open and the rejection landed

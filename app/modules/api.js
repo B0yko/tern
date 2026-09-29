@@ -30,7 +30,7 @@ async function _json(path, opts = {}) {
   const timer = setTimeout(() => { _timedOut = true; ctrl.abort(); }, timeoutMs);
   // Link the caller-provided AbortSignal to ours so cancellation flows
   // through. Without this, the search-as-you-type abort in topbar.js
-  // (commit 8217c1e) would be silently ignored — the older fetch would
+  // would be silently ignored — the older fetch would
   // run to completion on the backend, wasting a SigLIP embed + Chroma
   // query + transcript/OCR FTS per superseded keystroke. Adding-and-
   // firing pattern: if already aborted, abort immediately; else hook
@@ -94,23 +94,23 @@ export const api = {
       `/api/transcript/window?file_id=${file_id}&ts_ms=${ts_ms}&radius=${radius}`,
       // Pass-through signal so detail.js can abort superseded fetches
       // during rapid ↓ navigation. Same end-to-end abort plumbing as
-      // /api/search (commit 8217c1e).
+      // /api/search.
       opts.signal ? { signal: opts.signal } : {},
     ),
   // Export endpoints get bumped timeouts because the backend's subprocess
-  // ceiling (commit 5de1191) is higher than _json's 60 s default. Without
+  // ceiling is higher than _json's 60 s default. Without
   // the override, the frontend aborts at 60 s while the BACKEND continues
   // ffmpeg encoding for up to its own ceiling — the user sees a "timed
   // out" toast but the clip ACTUALLY GETS SAVED to workspace/exports/
   // (just with no UI feedback). Then on the next search the user thinks
   // the export failed but two copies exist. Both timeouts here = backend
   // ceiling + 60 s slack so a real backend timeout still gets a clean
-  // 504 from commit bf2c0b5/6490a2d translations rather than a frontend
+  // 504 from the backend's translation rather than a frontend
   // AbortError that masks it.
   exportClip:    (file_path, start_ms, end_ms, audio_only = false) => _json("/api/export/clip", {
     method: "POST",
     body: JSON.stringify({ file_path, start_ms, end_ms, audio_only, padding_ms: 1500 }),
-    // Backend ceiling: 300 s for video (commit 5de1191) + 60 s slack
+    // Backend ceiling: 300 s for video + 60 s slack
     // for asyncio scheduling / network round-trip / file IO. Audio
     // path is faster (120 s ceiling) but using the higher value is
     // simpler than branching on audio_only — extra wait only triggers
@@ -128,7 +128,7 @@ export const api = {
   exportFcpxml:  (hits, project_name) => _json("/api/export/fcpxml", {
     method: "POST",
     body: JSON.stringify({ hits, project_name }),
-    // Backend probes ffprobe per UNIQUE source file (commit 6490a2d) at
+    // Backend probes ffprobe per UNIQUE source file at
     // 30 s ceiling each. A 50-hit FCPXML spanning 10 sources = up to
     // 300 s if all 10 hit the ceiling. + 60 s slack matches the
     // export/clip rationale. Real-world: completes in 1-5 s; the

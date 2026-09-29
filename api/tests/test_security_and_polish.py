@@ -1,10 +1,10 @@
-"""Regression tests for the 2026-05-19/20 security and polish pass.
+"""Regression tests for the API's security, diagnostics and export behaviour.
 
 Covers:
-- /api/file path-traversal allowlist (commit be39d9a)
-- /api/folders/remove broad-prefix rejection (commit 276ae74)
-- log_event 'level' field (commit 58a0ebf)
-- /api/export/srt happy path + edge cases (commit ba55215)
+- /api/file path-traversal allowlist
+- /api/folders/remove broad-prefix rejection
+- log_event 'level' field
+- /api/export/srt happy path + edge cases
 
 Run:
     cd api && uv run pytest tests/test_security_and_polish.py -v
@@ -55,8 +55,8 @@ def test_file_check_order_no_existence_oracle(client):
 
 # ─── /api/reveal /api/open /api/quicklook allowlist ────────────────────
 # Same risk class as /api/file but the exploit is worse: these EXECUTE
-# (via LaunchServices) or LEAK (Quick Look) the requested file. Gate added
-# alongside this test in the same commit.
+# (via LaunchServices) or LEAK (Quick Look) the requested file. The allowlist gate
+# is covered by the tests below.
 
 def test_reveal_rejects_path_outside_allowlist(client):
     """/api/reveal must refuse arbitrary paths (was wide-open before)."""
@@ -96,7 +96,7 @@ def test_quicklook_rejects_path_outside_allowlist(client):
 def test_file_query_param_caps_path_at_4096_chars(client):
     """`/api/file?path=` is a query param (not a Pydantic body model),
     so it needed an explicit `Query(max_length=4096)` to mirror the
-    commit b6fb220 PathRequest cap on the POST file-action endpoints.
+    PathRequest cap on the POST file-action endpoints.
     Without it, a hostile local GET could send `?path=A*10_000_000`
     and waste CPU on Path(...).resolve() + the allowlist string-op
     + the DB lookup before the path failed any actual fs check.
@@ -286,7 +286,7 @@ def test_module_js_under_modules_dir_also_uses_no_cache(client):
     via dynamic import and the loader caches them separately from
     regular scripts. Player.js + topbar.js + sidebar.js et al all live
     here. If their Cache-Control regresses to max-age=N, the user's
-    hot-patch experience breaks BAD (see commit 110d0db postmortem)."""
+    hot-patch experience breaks BAD."""
     # Use a module file we know exists in the bundle
     for path in ("/modules/api.js", "/modules/sidebar.js", "/modules/player.js"):
         r = client.get(path)
@@ -383,10 +383,10 @@ def test_export_clip_rejects_padding_overlarge(client):
 
 
 def test_export_clip_rejects_empty_file_path(client):
-    """ExportRequest.file_path needs min_length=1 to match the commit
-    b6fb220 PathRequest pattern — without it, `{"file_path": "", ...}`
+    """ExportRequest.file_path needs min_length=1 to match the
+    PathRequest pattern — without it, `{"file_path": "", ...}`
     passes Pydantic and `Path("").resolve()` returns the sidecar's
-    CWD. Same information-leak oracle as the b6fb220 case, just on
+    CWD. Same information-leak oracle as the PathRequest case, just on
     /api/export/clip."""
     r = client.post("/api/export/clip", json={
         "file_path": "", "start_ms": 0, "end_ms": 1000,
@@ -395,8 +395,8 @@ def test_export_clip_rejects_empty_file_path(client):
 
 
 def test_export_clip_rejects_path_over_4096_chars(client):
-    """ExportRequest.file_path needs max_length=4096 to match the commit
-    a75ca51 /api/file Query cap. Pre-fix, a hostile POST with a 10 MB
+    """ExportRequest.file_path needs max_length=4096 to match the
+    /api/file Query cap. Without the cap, a hostile POST with a 10 MB
     path would Pydantic-deserialize the whole string into memory before
     the allowlist gate could reject it. 5000 chars → 422 at boundary."""
     huge = "/" + "A" * 5000
@@ -407,7 +407,7 @@ def test_export_clip_rejects_path_over_4096_chars(client):
 
 
 def test_export_clip_path_at_exactly_4096_chars_passes_validator(client):
-    """Boundary off-by-one guard for the commit 70ca0f3 cap. A path of
+    """Boundary off-by-one guard for the cap. A path of
     EXACTLY 4096 chars MUST pass Pydantic validation — the cap is
     `max_length=4096` (inclusive). Without this pin, a future refactor
     that changed to `< 4096` (exclusive) would over-tighten and start
@@ -452,7 +452,7 @@ def test_export_clip_sane_30min_passes_validation(client):
 @pytest.mark.needs_siglip
 def test_export_clip_translates_ffmpeg_timeout_to_504(client, tmp_path, monkeypatch):
     """When extract_audio_clip raises subprocess.TimeoutExpired (because the
-    commit 5de1191 ceiling tripped on a hung ffmpeg / corrupted source /
+    ffmpeg ceiling tripped on a hung ffmpeg / corrupted source /
     stalled SMB mount), the endpoint MUST translate it to HTTP 504 with
     a precise message — NOT a generic 500 with an unhelpful Python
     traceback. The frontend's clip-save toast surfaces the message text
@@ -506,7 +506,7 @@ def test_export_clip_translates_ffmpeg_timeout_to_504(client, tmp_path, monkeypa
 
 def test_export_fcpxml_translates_ffprobe_timeout_to_504(client, monkeypatch):
     """Mirror of test_export_clip_translates_ffmpeg_timeout_to_504 for the
-    FCPXML endpoint. probe_media (commit 5de1191 ceiling = 30s) is called
+    FCPXML endpoint. probe_media (ceiling = 30s) is called
     once per unique source file inside export_fcpxml. If any source is on
     a stalled mount, probe_media raises subprocess.TimeoutExpired and the
     endpoint MUST translate it to a clean 504 with a specific message
@@ -583,7 +583,7 @@ def test_start_indexing_rejects_user_home(client):
 @pytest.mark.needs_tools("ffmpeg", "whisper-cli", "vision-ocr")
 @pytest.mark.needs_siglip
 def test_start_indexing_empty_folder_returns_ok_false_with_message(client, tmp_path):
-    """Commit f0754d2 wired the frontend to surface the
+    """The frontend surfaces the
     `{ok: false, message: "No supported media files found in folder"}`
     response when /api/index is called on a folder with no supported
     media. Pin the backend contract so a regression that:
@@ -793,7 +793,7 @@ def test_log_event_preserves_unicode_strings(client, tmp_path, monkeypatch):
     `~/Música/Reportagem` (accented) would otherwise see log entries
     like `"folder":"\\u0414\\u043e\\u043a..."` — useless for support
     threads that ARE the primary consumer of tern-debug.log. Mirror of
-    the commit f1cdbc3 / commit c2fdb18 storage.py fixes — json.dumps
+    the storage.py behaviour — json.dumps
     defaults to ASCII-escape, must be overridden with ensure_ascii=False.
 
     Pin: raw stored bytes contain NO `\\u` escapes AND the round-trip
@@ -945,8 +945,8 @@ def test_srt_export_radius_out_of_range_rejected_at_validator(client):
     Field validator. Previously the endpoint silently clamped
     out-of-range values (radius=9999 became 30 with no caller
     feedback). Now Pydantic rejects with 422 so a typo or buggy
-    client learns immediately. Same migration as the equivalent
-    transcript-window change shipped in the same commit."""
+    client learns immediately. Same treatment as the equivalent
+    transcript-window parameter."""
     files = client.get("/api/files").json()["files"]
     audio = next((f for f in files if "audio" in (f.get("mime") or "")), None)
     if not audio:
@@ -979,9 +979,9 @@ def test_srt_export_radius_at_cap_30_succeeds(client):
 
 
 def test_export_csv_logs_success_event_with_hit_count(client, monkeypatch):
-    """Commit 5464f3a closed the diagnostic-parity gap: before it, only
-    /api/export/srt emitted a success log_event. /api/export/csv was
-    silent on the happy path, blocking support diagnostics for
+    """Every export endpoint emits a success log_event (diagnostic
+    parity with /api/export/srt); a silent happy path blocks support
+    diagnostics for
     "did this user export the CSV they're asking about?" threads.
 
     Pins the contract: log_event("export_csv", ...) fires with hits=N
@@ -1016,7 +1016,7 @@ def test_export_csv_logs_success_event_with_hit_count(client, monkeypatch):
 
 @pytest.mark.needs_siglip
 def test_export_clip_logs_success_event_with_diagnostic_fields(client, monkeypatch, tmp_path):
-    """Commit 5464f3a: /api/export/clip success path must emit log_event
+    """/api/export/clip success path must emit log_event
     with source path + audio_only + duration_ms fields so a support
     thread can trace "what got exported when?" from the log alone.
 
@@ -1074,17 +1074,17 @@ def test_export_clip_logs_success_event_with_diagnostic_fields(client, monkeypat
 
 
 def test_export_fcpxml_logs_success_event_with_hit_count(client, monkeypatch):
-    """Commit 5464f3a: /api/export/fcpxml success path must emit log_event
+    """/api/export/fcpxml success path must emit log_event
     with hit count so support can trace which export landed in
     workspace/exports/ at a given time. Body content (XML asset/clip
     elements) is user data — only hit count + filename go in the
     structured fields.
 
     Completes the diagnostic-parity trio: SRT (already had it),
-    clip + csv (commits 5464f3a + e3cf036 test), fcpxml (this test).
+    clip + csv (tests above), fcpxml (this test).
     Stubs export_fcpxml at module level so the test doesn't need to
-    actually probe ffprobe / write a real FCPXML — mirrors the commit
-    bf2c0b5 504-translation test pattern."""
+    actually probe ffprobe / write a real FCPXML — mirrors the
+    504-translation test pattern."""
     import main
     log_events: list[tuple] = []
     real_log_event = main.log_event
@@ -1147,7 +1147,7 @@ def test_export_endpoints_cap_project_name_at_200_chars(client, endpoint, extra_
 
 
 def test_srt_export_ts_past_end_returns_tail(client):
-    """Regression for commit 84bc280 (full-file load → 2-query SQL): a
+    """Regression for the 2-query SQL window (replacing a full-file load): a
     `ts_ms` past the file's actual duration MUST still produce an SRT
     whose final cue is the file's actual last transcript segment.
     The old Python impl computed the tail clamp via `min(len(rows),
@@ -1370,7 +1370,7 @@ def test_transcript_window_radius_zero_returns_matched_only(client):
 
 
 def test_transcript_window_ts_past_end_returns_tail(client):
-    """Regression for the commit 53274bf refactor (load-all → 2-indexed-
+    """Regression for the refactor (load-all → 2-indexed-
     queries): a `ts_ms` far past the file's actual duration MUST still
     return the LAST segment of the file as the matched line (clamp to
     end-of-file behavior), with the window comprising the tail. The
@@ -1947,7 +1947,7 @@ def test_search_limit_zero_or_negative_rejected(client):
 
 def test_search_sources_unknown_value_rejected(client):
     """Typo in source name ('transcripts' vs 'transcript') silently
-    returned 0 hits pre-commit. Now: 422 at the API boundary so the
+    returns 0 hits otherwise. Instead: 422 at the API boundary so the
     client sees the real problem."""
     r = client.post("/api/search", json={
         "query": "the", "sources": ["transcripts"]  # typo: trailing s
@@ -2548,8 +2548,8 @@ def test_cancel_indexing_is_idempotent_no_double_log(client, tmp_path, monkeypat
     true MUST be idempotent — return ok:True without re-appending to the
     in-memory toast log or re-firing the log_event. Real-world triggers:
 
-      - User clicks Stop, cancel POST times out via the commit 3d2b2d4
-        retry path, user clicks Stop again
+      - User clicks Stop, cancel POST times out and the
+        retry path runs, user clicks Stop again
       - A curl script double-taps the endpoint
       - A flaky network re-sends the POST (rare but possible)
 
@@ -2602,10 +2602,10 @@ def test_cancel_indexing_is_idempotent_no_double_log(client, tmp_path, monkeypat
 
 
 def test_cancel_indexing_writes_log_event_with_snapshot(client, tmp_path, monkeypatch):
-    """Commit b3a09f0 adds a log_event INFO line to tern-debug.log on
-    every cancel — currently the in-memory app.state.indexing["log"]
-    only ran the toast-visible line. Support threads need the
-    persistent log so "did the user cancel?" answerable from a
+    """Every cancel adds a log_event INFO line to tern-debug.log; the
+    in-memory app.state.indexing["log"] only holds the toast-visible
+    line. Support threads need the persistent log so "did the user
+    cancel?" is answerable from a
     /api/diagnostics fetch alone.
 
     Pin: after POSTing cancel, the crash log contains an
@@ -2962,7 +2962,7 @@ def test_license_activate_accepts_https_server_url(client, monkeypatch):
 
 
 def test_license_activate_invalid_key_returns_ok_true_with_is_valid_false(client, monkeypatch):
-    """Commit 9b0a433 (license.js) relies on the backend's two-flag contract:
+    """license.js relies on the backend's two-flag contract:
 
       - ok=true  → activation roundtrip succeeded (server responded,
                    no network failure)
@@ -2978,7 +2978,7 @@ def test_license_activate_invalid_key_returns_ok_true_with_is_valid_false(client
     the message, so technically the same UI would work, BUT it would
     confuse the meaning of `ok` (roundtripped → network OK) with
     `is_valid` (recognized → key OK) — they're independent and the
-    frontend commit 9b0a433 doc-comment relies on them staying that way.
+    frontend's license.js relies on them staying that way.
     Pin the contract.
     """
     import main, json as _json, urllib.request
@@ -3014,7 +3014,7 @@ def test_license_activate_invalid_key_returns_ok_true_with_is_valid_false(client
 
 def test_license_activate_sends_real_app_version_not_hardcoded(client, monkeypatch):
     """Regression for the second version-hardcoding site (the first was
-    /api/diagnostics, fixed in 71d239e — that test pinned the response
+    /api/diagnostics, covered by its own test that pins the response
     side; this one pins the OUTBOUND request body to the license
     server). Pre-fix: license_activate sent {"app_version": "0.1.0"}
     literally, regardless of the actual app version. Server-side
@@ -3205,8 +3205,7 @@ def test_save_license_cache_preserves_unicode_email_and_message(client, tmp_path
     escapes — fine for the in-app round-trip (json.loads decodes) but
     ugly when a user inspects the file to debug an activation problem.
 
-    Same defect pattern as commit f1cdbc3 (storage), commit c2fdb18
-    (storage twin), commit 213215a (log_event). Pin the fourth site so a
+    Same defect pattern as storage, its twin and log_event. Pin this site so a
     future refactor that consolidates serialization without preserving
     the flag fails loud."""
     import main
@@ -3228,8 +3227,8 @@ def test_save_license_cache_preserves_unicode_email_and_message(client, tmp_path
 
 
 def test_license_cache_empty_file_treated_as_missing_with_log(client, tmp_path, monkeypatch):
-    """A pre-fix crash left an empty license.json. Before this commit
-    that became json.JSONDecodeError → swallowed → return {} silently.
+    """A crash can leave an empty license.json. Without the check
+    that would become json.JSONDecodeError → swallowed → return {} silently.
     Now: detected via raw.strip() check, logged at WARN level so the
     user / support has a forensic trail. Function still returns {}."""
     import main
@@ -3351,7 +3350,7 @@ def test_license_clear_logs_event_on_no_op_already_gone(client, monkeypatch, tmp
 def test_health_returns_ok(client):
     """/api/health is the sidecar liveness probe — must return 200 with
     a 'status': 'ok' field. The frontend's recurring health-poll
-    (commit 5ad2a25) keys off this exact shape."""
+    keys off this exact shape."""
     r = client.get("/api/health")
     assert r.status_code == 200
     body = r.json()
@@ -3407,7 +3406,7 @@ def test_files_limit_param_caps_response(client):
 
 def test_files_limit_param_rejects_invalid(client):
     """limit < 1 must 400 (not silently return everything). Matches
-    the SearchRequest validation pattern (1d22dd6)."""
+    the SearchRequest validation pattern."""
     r = client.get("/api/files", params={"limit": 0})
     assert r.status_code == 400, f"limit=0 should 400, got {r.status_code}"
     r2 = client.get("/api/files", params={"limit": -5})
@@ -3447,7 +3446,7 @@ def test_stats_returns_expected_fields(client):
 def test_index_status_returns_running_field(client):
     """/api/index/status is polled by the toast (modules/indexing.js).
     Must always include a 'running' boolean — toast logic gates on it.
-    Also must include the sub-file stage fields shipped in 3c78312 so the
+    Also must include the sub-file stage fields so the
     toast's stage-row render doesn't break on a None-vs-missing distinction.
     AND must include cancel_requested even when idle (added to startup
     init in the same change as this assertion — before it, the field was
@@ -3523,7 +3522,7 @@ def test_log_event_defaults_to_info_level(client, tmp_path, monkeypatch):
 #   - limit < 1 → HTTP 400 (covered by test_files_limit_param_rejects_invalid above)
 #   - limit ≤ 10000 → pass through (cap accepted unchanged)
 #   - limit > 10000 → silently clamped to 10000 (matches SearchRequest
-#     convention from 1d22dd6 — protects against a misbehaving client
+#     convention — protects against a misbehaving client
 #     asking for a million-row dump)
 # The "silent clamp" and "exact boundary" paths were untested. A future
 # refactor that flipped >10000 to a 400 reject would break the resilient-
@@ -3693,7 +3692,7 @@ def test_diagnostics_endpoint_still_returns_log_tail(client, tmp_path, monkeypat
 
 
 # ─── /api/file/thumbnails — keyframe filmstrip endpoint ─────────────────
-# Backs the dual-zoom video trim UI (commit 3425ede). Returns the pre-
+# Backs the dual-zoom video trim UI. Returns the pre-
 # extracted ffmpeg keyframes for a file as a sorted {ts_ms, url}[] list.
 # Was added without tests; the frontend silently falls back to a flat
 # gradient on failure, so a regression here would visibly degrade every
@@ -3711,7 +3710,7 @@ def test_file_id_endpoints_reject_non_positive(client, endpoint, extra_params, b
     DB lookup and got rejected with 404 — wasted a round-trip and
     used a less-specific error code. `Query(..., ge=1)` rejects at
     the Pydantic validation layer with a clean 422 BEFORE any DB
-    work happens. Same hygiene as commit a75ca51's /api/file Query
+    work happens. Same hygiene as the /api/file Query
     max_length cap."""
     params = {"file_id": bad_id, **extra_params}
     r = client.get(endpoint, params=params)
@@ -4052,7 +4051,7 @@ def test_check_folder_is_safe_rejects_user_home_at_runtime():
 
 
 # ─── _csv_safe — direct unit tests ─────────────────────────────────────
-# Commit 15b133b extended _csv_safe to handle space-padded formula leads
+# _csv_safe handles space-padded formula leads
 # (Excel et al trim leading spaces before evaluating the cell's formula
 # parser). Existing tests go through /api/export/csv which exercises
 # the full payload pipeline — slow + harder to enumerate edge cases.
@@ -4083,7 +4082,7 @@ def test_csv_safe_neutralises_literal_formula_leads():
 
 
 def test_csv_safe_neutralises_space_padded_formula_leads():
-    """Commit 15b133b regression: spaces BEFORE a formula lead must not
+    """Regression: spaces BEFORE a formula lead must not
     bypass the guard. Excel et al trim leading spaces before evaluating
     the formula parser, so `" =1+1"` is treated as `=1+1` and evaluated."""
     from main import _csv_safe

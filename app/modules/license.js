@@ -148,7 +148,7 @@ async function _activate() {
   btn.disabled = true;
   try {
     // Use api.licenseActivate instead of raw fetch — inherits the
-    // commit d252018 default 60 s timeout (matters: backend's own
+    // default 60 s timeout (matters: backend's own
     // license-server call has an 8 s ceiling so the full /api/license/
     // activate call should always return in <10 s; if it doesn't, the
     // SIDECAR is wedged, not the license server). Pre-migration the

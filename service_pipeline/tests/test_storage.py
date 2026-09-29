@@ -55,8 +55,8 @@ def test_composite_index_used_for_transcript_window_query(temp_store):
 
 
 def test_composite_index_used_for_transcript_window_count_subquery(temp_store):
-    """Commit 53274bf refactored /api/transcript/window from a full-file
-    load + Python `abs()` scan into a correlated-subquery COUNT that
+    """/api/transcript/window uses a correlated-subquery COUNT instead of a
+    full-file load + Python `abs()` scan; the query
     finds matched_idx without materializing all rows. The new query
     shape (NOT covered by the old EXPLAIN test which pins the simple
     WHERE+ORDER BY form):
@@ -321,8 +321,8 @@ def test_set_file_metadata_preserves_unicode(temp_store):
 
 
 def test_upsert_file_preserves_unicode_metadata(temp_store):
-    """Twin defect to set_file_metadata's ensure_ascii=False (commit
-    f1cdbc3). upsert_file ALSO json.dumps the metadata column for the
+    """Twin defect to set_file_metadata's ensure_ascii=False.
+    upsert_file ALSO json.dumps the metadata column for the
     initial INSERT path — and was using the same default-ASCII-escape
     serializer. Without this pin, a regression that drops ensure_ascii
     on EITHER call site stays silent (since /api/files reads still work
@@ -645,9 +645,9 @@ def test_search_filename_matches_basename_tokens(temp_store):
 
 
 def test_search_filename_cjk_2char_query_matches_basename(temp_store):
-    """Commit 63ff96b added the CJK 2-char-minimum carve-out to
-    `SearchEngine._apply_filename_boost` (the BOOST layer). That fix was
-    INCOMPLETE because `storage.py search_filename` (the FETCH layer)
+    """`SearchEngine._apply_filename_boost` (the BOOST layer) has a CJK
+    2-char-minimum carve-out. It would be
+    INCOMPLETE if `storage.py search_filename` (the FETCH layer)
     still applied a flat 3-char minimum — so a CJK 2-char query like
     `会議` was silently filtered to zero candidates BEFORE the boost
     code could even see them. Net, previously:
@@ -709,7 +709,7 @@ def test_search_filename_cjk_2char_query_matches_basename(temp_store):
 
 def test_search_filename_directory_name_does_not_false_positive(temp_store):
     """Critical contract: search_filename matches BASENAME tokens, NOT
-    full-path tokens. Commit 7d58e0c added a coarse SQL
+    full-path tokens. A coarse SQL
     `LOWER(path) LIKE '%token%'` pre-filter — that would match files
     whose DIRECTORY contains the token (not just the basename). The
     Python word-boundary loop after the SQL filter is what enforces
@@ -742,8 +742,8 @@ def test_search_filename_directory_name_does_not_false_positive(temp_store):
 def test_search_filename_returns_one_hit_per_file_with_keyframe(temp_store):
     """When a file HAS keyframes (videos / images do; audio doesn't),
     the returned hit's ts_ms comes from the LOWEST-ts_ms keyframe and
-    thumbnail_path matches that keyframe's path. Before commit 7d58e0c
-    it used an N+1 per-match query; the fix batched it with ROW_NUMBER
+    thumbnail_path matches that keyframe's path. A per-match N+1 query
+    would be wrong here; the lookup is batched with ROW_NUMBER
     OVER PARTITION. This test pins both the correctness (lowest
     ts_ms wins) AND that thumbnail_path is populated, since the
     empty.js + row.js render path depends on it."""
@@ -781,7 +781,7 @@ def test_search_filename_returns_one_hit_per_file_with_keyframe(temp_store):
 # default limit=50, that's 50 SQL queries on the search hot path —
 # ~10 ms of pointless serialization even on fast SSDs, more after
 # idle when the cache is cold. The fix batches into a single
-# `IN (?, ?, ?…)` join, mirroring search_filename's 7d58e0c pattern.
+# `IN (?, ?, ?…)` join, mirroring search_filename's pattern.
 # Pin both correctness (multi-file results join right) and the perf
 # property (only ONE files-table query, no matter the result count).
 
@@ -943,7 +943,7 @@ def test_remove_folder_wipes_files_under_prefix(temp_store):
 
 
 def test_remove_folder_wipes_thumbnail_dirs_on_disk(temp_store):
-    """End-to-end pin on the commit 891ed7e fix: remove_folder's per-file
+    """End-to-end pin on the fix: remove_folder's per-file
     cleanup_file loop must propagate the on-disk thumbnail dir wipe.
     Before the fix, remove_folder cleaned SQLite + Chroma but left
     `db/thumbnails/file_<id>/` directories orphaned — a user removing
@@ -1166,9 +1166,8 @@ def test_cleanup_file_only_affects_target_file(temp_store):
 
 # ─── list_files() — base behavior + status filter + limit arg ──────────
 # /api/files (and indirectly the sidebar + empty state + filters folder
-# dropdown) depends on this function. The limit arg was added in 98c3707
-# for the empty-state perf win; the ORDER BY id was added in the same
-# commit to make pagination stable. Both deserve regression coverage.
+# dropdown) depends on this function. The limit arg serves
+# the empty-state perf win; the ORDER BY id makes pagination stable. Both deserve regression coverage.
 
 def _seed_n(store, n: int, status: str = "done", mime: str = "audio/mpeg"):
     """Helper: drop N files into the store with deterministic paths +
@@ -1208,7 +1207,7 @@ def test_list_files_status_filter_excludes_others(temp_store):
 
 
 def test_list_files_limit_caps_returned_rows(temp_store):
-    """limit pushes LIMIT into SQL. 98c3707's perf win — for a 5k-file
+    """limit pushes LIMIT into SQL, a perf win: for a 5k-file
     workspace, the empty-state's limit=12 saves 4988 FileRecord
     constructs + 4988 metadata-JSON parses."""
     _seed_n(temp_store, 10)

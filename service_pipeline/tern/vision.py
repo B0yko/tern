@@ -161,7 +161,7 @@ class KeyframeExtractor:
             pattern,
         ]
         # 300 s ceiling matches the audio.py extract_audio + whisper-cli
-        # pattern (commit b180c42). A corrupt video / hung demuxer would
+        # pattern. A corrupt video / hung demuxer would
         # otherwise stall the WHOLE indexing pipeline on this file
         # indefinitely — TimeoutExpired propagates → file marked errored
         # in ingest.run_indexing_task's per-file try/except → loop
@@ -494,7 +494,7 @@ class Embedder:
         cached = self._text_cache.get(text)
         if cached is not None:
             # Move to end (LRU touch). Wrapped in try/except because the
-            # cache is shared across threads when commit 3c8b91d's search-
+            # cache is shared across threads when the search-
             # time perf optimization runs embed_text on a background
             # thread concurrently with FTS5 channels: a different search
             # firing in parallel (rare but possible — concurrent CLI +

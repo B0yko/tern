@@ -62,8 +62,8 @@
   box-shadow: 0 1px 6px rgba(0,0,0,.4), 0 0 0 0.5px rgba(255,255,255,.06);
 }
 
-/* Bookmark indicator — paired with the row.js className hook from
-   commit ea89cea. The hover-action star icon flips outline → filled
+/* Bookmark indicator — paired with the row.js className hook.
+   The hover-action star icon flips outline → filled
    for bookmarked rows, but row-hover-actions only fades in on
    :hover/.sel, so a user scanning a long result list has no
    at-a-glance bookmark cue. This 3 px accent strip on the row's

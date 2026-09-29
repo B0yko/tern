@@ -16,8 +16,8 @@ const STEPS = [
     // bundled demo workspace's ocr_segments — so a trial user who took
     // the tour, copied a quoted phrase into the search box, got "0
     // results" and walked away believing the OCR channel didn't work.
-    // Same trap fixed in the topbar placeholder rotation at commit
-    // ea761cc. Replaced with two abstract use-cases (no scare-quoted
+    // The topbar placeholder rotation avoids the same trap.
+    // Replaced with two abstract use-cases (no scare-quoted
     // queries to copy verbatim) — the user understands what's possible
     // without being misled into typing a zero-match phrase.
     sub: "Apple Vision runs OCR on every keyframe on your Mac. The URL someone screenshared, a name in a lower-third — if it ever appeared on screen, you can search it later.",

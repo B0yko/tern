@@ -286,7 +286,7 @@ function _renderVideo(container, hit) {
           <div class="vtrim-snap-flash" id="vtrim-snap-flash" aria-hidden="true"></div>
         </div>
 
-        <!-- Magnified-frame popover REMOVED in commit e43ae7b: was
+        <!-- Magnified-frame popover removed: it was
              obscuring the keyframe filmstrip during the very drag the
              strip exists to support. Main video above already scrubs
              live to the handle position so the popover was redundant.
@@ -295,7 +295,7 @@ function _renderVideo(container, hit) {
              template literal would parse them as string terminators
              and crash WKWebView with Unexpected-identifier — original
              wording with backticks around a code snippet actually
-             broke the app for one commit before this fix. -->
+             would break the app. -->
 
         <!-- Numeric input row. Replaces the prior static "00:34 → 00:50"
              label with editable inputs; users type "0:14" or "1:23:45"
@@ -455,8 +455,8 @@ async function _fetchVtrimThumbs(fileId) {
   if (_vtrimThumbsCache.has(fileId)) return _vtrimThumbsCache.get(fileId);
   try {
     // Use api.fileThumbnails instead of raw fetch — inherits the
-    // commit d252018 default 60 s timeout. Lower-priority than the
-    // other migrations in the bbb1949 cluster (this fn has its own
+    // default 60 s timeout. Lower-priority than the
+    // other api.js migrations (this fn has its own
     // per-file negative cache, and the trim widget renders with a
     // gradient fallback if thumbs don't arrive — a wedged fetch
     // only blocks the FILMSTRIP, not the player itself) but the
@@ -631,7 +631,7 @@ function _setupVideoTrim(container, hit, video) {
     }
     // Native tooltip on the working strip — surfaces the full
     // clip-range AND (when clamped) the off-screen extent so a
-    // hover explains the chevron stripe (commit 8ca914d): the user
+    // hover explains the chevron stripe: the user
     // sees the stripe but otherwise has to read the IN/OUT input
     // row to learn HOW FAR the selection continues past the visible
     // window. Tooltip goes on `work` (not `workBand`) because the

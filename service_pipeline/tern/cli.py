@@ -82,8 +82,8 @@ def search(ctx, query: str, limit: int, source, json_output: bool):
 
     if json_output:
         # ensure_ascii=False — fifth and final site of the JSON-escape
-        # bug pattern after storage.py (f1cdbc3, c2fdb18), log_event
-        # (213215a), license cache (7cb0515). Search hits carry user-
+        # bug pattern after storage.py, log_event
+        # and the license cache. Search hits carry user-
         # transcribed text (Cyrillic podcasts, CJK videos, etc.) AND
         # filenames in arbitrary scripts. A scripting user piping
         # `tern search ... --json-output | jq` would otherwise see

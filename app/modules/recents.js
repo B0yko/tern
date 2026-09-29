@@ -55,7 +55,7 @@ export function addRecent(query, hits) {
   // addRecent — called every successful search — and the search
   // flow breaks. Matches the pattern used by bookmarks.js (`_persist`),
   // prefs.js (`_persist`), and saved.js (`_persist`).
-  // Diagnostic-trail addition (commit 8cef452 sibling): surface the
+  // Diagnostic-trail addition: surface the
   // actual exception class to WebKit devtools. Recents is the
   // HIGHEST-frequency writer of the lot (fires on every successful
   // search), so it's the most likely to be the writer that finally

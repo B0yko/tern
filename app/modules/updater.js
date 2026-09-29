@@ -53,7 +53,7 @@ function _shouldCheck() {
 }
 
 function _markChecked() {
-  // Diagnostic-trail addition (commit 8cef452 sibling). Silent UX is
+  // Diagnostic-trail addition. Silent UX is
   // correct here — we don't want to spam the user about an updater-
   // metadata write that they can't act on — but a persistent failure
   // would mean the update-check fires every launch (the gate at line

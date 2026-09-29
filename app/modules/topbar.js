@@ -123,7 +123,7 @@ const PLACEHOLDER_EXAMPLES = [
   // finds the exact two-word sequence (not the union of "customer"
   // and "success" within the same segment). The capability has
   // shipped since v1.0 but was silently buried in the search engine
-  // — no UI surface mentioned it until the commit 8603702 FAQ
+  // — no UI surface mentioned it until the FAQ
   // entry. Rotating it through the placeholder slot gives every
   // trial user the "wait, quotes work?" lightbulb before they
   // bounce assuming Tern is a naive bag-of-words tool. Matches
@@ -177,10 +177,9 @@ export function initTopbar() {
     _stopPlaceholderRotation();
     const v = ev.target.value;
     // Persist the in-flight query on every keystroke — fires the most
-    // frequently of any localStorage writer in the codebase. Commit
-    // 95103ca added console.error to every other writer's silent catch;
-    // this one was missed because that commit's grep targeted
-    // _persist-named helpers. Same diagnostic-trail rationale: WebKit
+    // frequently of any localStorage writer in the codebase. Every
+    // other writer's catch logs console.error; this one is covered
+    // too even though it isn't a _persist-named helper. Same diagnostic-trail rationale: WebKit
     // devtools needs the exception class name to distinguish a quota-
     // overflow QuotaExceededError from a SecurityError (private-
     // browsing WebView) or a transient I/O failure, so support can

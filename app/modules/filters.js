@@ -40,7 +40,7 @@ function _load() {
 }
 
 function _save() {
-  // Diagnostic-trail addition (commit 8cef452 sibling): surface the
+  // Diagnostic-trail addition: surface the
   // QuotaExceededError / SecurityError class to WebKit devtools so
   // a user reporting "my Speech/On-screen/Visual scope keeps
   // resetting on restart" has SOMETHING to read in Inspector
@@ -153,14 +153,13 @@ let _folderCache = null;
 
 async function _refreshFolders() {
   try {
-    // Use api.files() instead of raw fetch — inherits the commit d252018
+    // Use api.files() instead of raw fetch — inherits the
     // default 60 s timeout. _refreshFolders is called every time the
     // filter dropdown opens AND on the state.files subscriber fire,
     // so a wedged backend used to hang all those promises (and
     // accumulate stuck timers via the subscriber chain). Same migration
-    // pattern as commits bbb1949 (sidebar.removeFolder), d1dd13c
-    // (detail.exportSrt), 1d271a2 (license.activate/clear), a2da4ed
-    // (results.bulkExportFcpxml).
+    // pattern as sidebar.removeFolder, detail.exportSrt,
+    // license.activate/clear and results.bulkExportFcpxml.
     const r = await api.files();
     const groups = new Map();
     (r.files || []).forEach(f => {

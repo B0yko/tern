@@ -19,9 +19,8 @@ forces the resolution before any test starts.
 Also: exclude iCloud-dupe ` 2.py` siblings from pytest collection. These
 are Finder's iCloud Drive duplicate-naming artifacts (file foo.py + file
 "foo 2.py" appears when iCloud detects a parallel edit). They're NOT
-tracked by git (.gitignore filters them out per commit 37102e4) and NOT
-shipped to the bundle (prepare_bundle.sh rsync excludes per commit
-0c7af83), but pytest's default `test_*.py` glob happily collects them
+tracked by git (.gitignore filters them out) and NOT
+shipped to the bundle (prepare_bundle.sh rsync excludes them), but pytest's default `test_*.py` glob happily collects them
 — and they contain stale assertion code from before the canonical
 file's last edit. Pytest then reports phantom failures against a file
 that isn't tracked or shipped, masking the real test status. Glob-

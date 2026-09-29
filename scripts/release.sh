@@ -16,8 +16,8 @@ ROOT="$(dirname "$HERE")"
 APP_NAME="Tern.app"
 
 # Derive VERSION from tauri.conf.json — single source of truth for the
-# DMG filename Tauri emits. Hardcoded `Tern_0.1.0_aarch64.dmg` before
-# this commit: the moment we bumped tauri.conf.json to 0.1.1 (or any
+# DMG filename Tauri emits. Hardcoded `Tern_0.1.0_aarch64.dmg` would break:
+# the moment we bumped tauri.conf.json to 0.1.1 (or any
 # future version), tauri-bundler wrote `Tern_0.1.1_aarch64.dmg` while
 # release.sh kept looking for the 0.1.0 path → the `[ -f "$DMG_PATH" ]`
 # guard at line ~40 errored out with "  .dmg not built — see cargo

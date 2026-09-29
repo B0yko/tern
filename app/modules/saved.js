@@ -43,7 +43,7 @@ function _persist(arr) {
   // the macOS Web Inspector when attached) the QuotaExceededError /
   // SecurityError class name + stack so the user can read the
   // failure out loud during a support call. Matches the same
-  // diagnostic-trail pattern empty.js gained in commit f8f2e19 for
+  // diagnostic-trail pattern empty.js has for
   // its /api/files catch.
   try { localStorage.setItem(KEY, JSON.stringify(trimmed)); }
   catch (e) { console.error("saved-search persist failed", e); }

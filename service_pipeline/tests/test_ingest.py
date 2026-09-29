@@ -167,8 +167,7 @@ def test_probe_media_happy_path(monkeypatch, tmp_path):
 
 # ─── _download_whisper_model — three failure-mode guards ───────────────
 # The runtime auto-download for the Whisper.cpp GGML model had
-# the same bug class commit 726ca0a closed in
-# prepare_bundle.sh: no HTTP status check, no min-size validation, no
+# the same bug class prepare_bundle.sh guards against: no HTTP status check, no min-size validation, no
 # socket timeout. Customer-impact case: a transient HF 503 returns an
 # HTML body, gets renamed to ggml-large-v3-turbo-q5_0.bin, and survives
 # every subsequent indexing run because `model_path.exists()` is true.
@@ -239,9 +238,9 @@ def test_whisper_download_unknown_model_name_fails_loud(tmp_path):
 # Whisper outputs many short segments (sometimes 1-2 words each on
 # punctuation-rich passages). The retrieval engine searches for whole
 # phrases, so we coalesce adjacent short segments into ~8s chunks before
-# storing them in transcript_fts. Untested before this commit; a future
-# refactor that breaks the merge boundary or drops the tail would have
-# shipped silently. Pure unit tests — no Whisper binary needed.
+# storing them in transcript_fts. A future
+# refactor that breaks the merge boundary or drops the tail would ship
+# silently. Pure unit tests — no Whisper binary needed.
 
 
 def test_coalesce_empty_input_returns_empty():
@@ -331,10 +330,8 @@ def test_coalesce_tail_segment_flushed_even_when_under_target():
 
 
 # ─── WhisperTranscriber._parse_offset — defensive numeric coercion ────
-# Pins the actual behavior after the docstring-cleanup commit.
-# Pre-cleanup, the docstring claimed "00:01:23.456" timestamp-string
-# support that the code never had — int("00:01:23.456") raises and
-# returns None. Tests confirm the real contract so a future "let's
+# Pins the actual behavior: "00:01:23.456" timestamp strings are not
+# supported — int("00:01:23.456") raises and returns None. Tests confirm the real contract so a future "let's
 # add timestamp parsing" change knows what it'd be replacing.
 
 

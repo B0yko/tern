@@ -112,7 +112,7 @@ export function renderRow(hit, index, selected) {
   // changes ("Remove bookmark" vs "Bookmark this moment"), and the
   // row gets a `row-bookmarked` class for any future CSS treatment
   // (e.g., a subtle gold dot or left-edge accent — defaulting to no
-  // visual change yet so this commit stays scoped to the icon).
+  // visual change yet so the change stays scoped to the icon).
   const bookmarked = isBookmarked(hit.file_id, hit.ts_ms);
   el.className = "row" + (selected ? " sel" : "") + (bookmarked ? " row-bookmarked" : "");
   const bookmarkTitle = bookmarked ? "Remove bookmark (⌘⇧B)" : "Bookmark this moment (⌘⇧B)";

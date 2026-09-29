@@ -303,9 +303,8 @@ class SearchEngine:
             check belongs to the search-engine's filter logic."
 
         Single source of truth lives in storage.py since storage is the
-        lower-level module — see commit 01095d9 + the follow-up DRY
-        refactor that hoisted the duplicate definition out of
-        search.py. The _CJK_RANGES constant + the per-char range scan
+        lower-level module; search.py imports it from there rather
+        than keeping a duplicate definition. The _CJK_RANGES constant + the per-char range scan
         live there too; this is a pure delegation.
         """
         return _token_has_cjk(token)

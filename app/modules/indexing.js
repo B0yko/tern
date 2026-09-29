@@ -287,7 +287,7 @@ function _renderDoneToast(s) {
   // on the head. Mostly-failed batches (errs > done) get a softer
   // log-pointer too so the user knows where to look for the
   // per-file traceback that log_event("index_file_failed", …)
-  // wrote (commit 8377671).
+  // wrote.
   let subText = "Search updated with the new files.";
   if (done === 0 && errs > 0) {
     subText = `All ${errs} file${errs === 1 ? "" : "s"} failed to index — check <code>~/Library/Logs/tern-crash.log</code> for the codec / path / permission issue.`;
@@ -397,16 +397,16 @@ function _renderToast(s) {
     _queueCancelled = true;
     // Disable + relabel inline so the user gets a sub-second confirmation
     // the click registered, instead of staring at a button that looks
-    // dead until the next 1.2 s status poll repaints the toast. Commit
-    // 8ca4d91 made the backend kill whisper-cli within ~1 s (1 Hz
-    // cancel_cb poll) so "Stopping…" is the truthful interim state.
+    // dead until the next 1.2 s status poll repaints the toast. The
+    // backend kills whisper-cli within ~1 s (1 Hz
+    // cancel_cb poll), so "Stopping…" is the truthful interim state.
     btn.disabled = true;
     btn.textContent = "Stopping…";
     try {
       await api.indexCancel();
     } catch (e) {
       // Cancel POST failed — most likely a transient loopback blip
-      // (the kind that motivated commit d5c9cfd). The queue-cancel
+      // (the kind that motivates this fallback). The queue-cancel
       // flag we set above already bails the in-frontend submission
       // loop, but the backend's currently-running pass continues.
       // Surface the failure so the user knows to retry rather than

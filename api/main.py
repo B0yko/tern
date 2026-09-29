@@ -34,7 +34,7 @@ from pydantic import BaseModel, Field, field_validator
 # Pull in the working tern pipeline.
 # main.py is at tern/api/main.py — two parents up is tern/, then service_pipeline/.
 # (Previously used .parent.parent.parent which pointed at the outer ./service_pipeline/
-# that was removed in adc31d4. The `.pth` editable install masked this; when that
+# that no longer exists. The `.pth` editable install masked this; when that
 # breaks — e.g. macOS keeps UF_HIDDEN on the .pth — `uv run uvicorn` would fail.)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "service_pipeline"))
 from tern.cli import default_config  # type: ignore
@@ -172,8 +172,8 @@ def log_event(category: str, msg: str, level: str = "INFO", **fields) -> None:
             **fields,
         }
         with _CRASH_LOG.open("a") as f:
-            # ensure_ascii=False mirrors the storage.py fixes from commits
-            # f1cdbc3 + c2fdb18 — without it, log entries containing
+            # ensure_ascii=False mirrors the storage.py behaviour;
+            # without it, log entries containing
             # non-ASCII content (a folder path like ~/Документы/Подкасты,
             # a Whisper-transcribed Cyrillic / CJK error message, a HEIC
             # filename with accents) get escaped to `До...`,
@@ -509,13 +509,13 @@ app.add_middleware(
     # no-auth loopback model, that meant any website the user visits in
     # Safari/Chrome could make cross-origin requests to 127.0.0.1:8765 and
     # exfiltrate the full search index, file paths, and diagnostics. The
-    # path-traversal allowlist (be39d9a, 7ac16d6, 49e4539) doesn't help
+    # path-traversal allowlist doesn't help
     # against /api/search / /api/files / /api/stats which are by-design
     # "return everything in the index" reads.
     #
     # Replace wildcard with a regex covering only loopback. Any localhost
     # or 127.0.0.1 port matches (Rust shell auto-finds a free port from
-    # 8765 upward — 03a95b4 — so a fixed origin list would be brittle).
+    # 18765 upward, so a fixed origin list would be brittle).
     # Plus the tauri:// scheme used by the asset protocol (currently
     # unused since we load via http://127.0.0.1, but harmless to grant).
     # Public origins fail CORS preflight — browser-loaded malicious pages
@@ -823,8 +823,8 @@ def _save_license_cache(data: dict) -> None:
     """
     try:
         _LICENSE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        # ensure_ascii=False mirrors the storage.py + log_event fixes
-        # (commits f1cdbc3, c2fdb18, 213215a). The cached license dict
+        # ensure_ascii=False mirrors the storage.py + log_event behaviour.
+        # The cached license dict
         # holds an `email` field (RFC 6531 internationalized addresses
         # may contain non-ASCII chars) and a `message` field
         # (license-server-provided, may be localized). Default
@@ -868,7 +868,7 @@ def _save_license_cache(data: dict) -> None:
 def _atomic_write_text(path: Path, text: str, *, encoding: str = "utf-8") -> None:
     """Write `text` to `path` atomically via tempfile + fsync + os.replace.
 
-    Same pattern as _save_license_cache (commit 13db322) but reusable for
+    Same pattern as _save_license_cache but reusable for
     any file the user re-opens elsewhere. The three export endpoints
     (CSV / SRT / FCPXML) previously used the plain `path.write_text(...)`
     sequence: truncate-then-rewrite. If the process is killed mid-write
@@ -1008,7 +1008,7 @@ async def license_activate(req: LicenseActivateRequest):
         import urllib.request
         import urllib.error
         # Use the resolved _APP_VERSION (parsed from pyproject.toml at
-        # startup — see commit 71d239e) instead of hardcoding.
+        # startup) instead of hardcoding.
         # Hardcoded "0.1.0" drifted from the canonical version on every
         # release bump — license server's telemetry / version-gated
         # rollouts would have mis-reported once we shipped any update.
@@ -1455,11 +1455,11 @@ class ExportRequest(BaseModel):
     Cap the clip duration at 30 minutes at the API boundary; anything
     longer is either a bug or abuse.
     """
-    # 1-4096 cap mirrors PathRequest (commit b6fb220) + /api/file's
-    # Query cap (commit a75ca51). Without min_length=1, an empty
+    # 1-4096 cap mirrors PathRequest + /api/file's
+    # Query cap. Without min_length=1, an empty
     # file_path passed Pydantic and `Path("").resolve()` returned
-    # the sidecar's CWD — same information-leak oracle as the commit
-    # b6fb220 case, just on the export endpoint. Without max_length,
+    # the sidecar's CWD — same information-leak oracle as the
+    # PathRequest cap, just on the export endpoint. Without max_length,
     # a 10 MB file_path POSTed by a hostile local process would
     # deserialize into memory before the allowlist gate could reject
     # it. POSIX PATH_MAX is 1024 on macOS / 4096 on Linux, so
@@ -1502,7 +1502,7 @@ class FCPXMLRequest(BaseModel):
     # truncation to 40 chars) AND embedded in the XML body. Uncapped
     # let a hostile POST ship a 10 MB project_name string that
     # Pydantic happily deserialized then we emitted into XML — same
-    # threat model as e44cc04's IndexRequest cap.
+    # threat model as the IndexRequest cap.
     project_name: str = Field(default="Tern Search Results", max_length=200)
 
 
@@ -1603,21 +1603,20 @@ async def stats():
     # chrome (which polls /api/index/status concurrently with sidebar
     # refreshes that fire /api/stats). Offload to the thread pool so
     # the event loop stays responsive on big workspaces, same pattern
-    # as /api/search, /api/files (commit 813b569), /api/file/thumbnails
-    # (commit da22bc6), /api/diagnostics, and /api/transcript/window.
+    # as /api/search, /api/files, /api/file/thumbnails,
+    # /api/diagnostics, and /api/transcript/window.
     import asyncio
     store = get_store(app)
     s = await asyncio.to_thread(store.stats)
     return {
         "files_total": s["files_total"],
         "files_done": s["files_done"],
-        # files_errored: persistent status='error' row count (storage.stats
-        # commit 4e3dfa3). The explicit re-shape here DROPPED the field for
-        # one release — empty.js's "N files failed to index" warning line
-        # (commit 7feba3b) read undefined and never rendered, and the
-        # qa_smoke field pin only catches it on a LIVE run (the unit
-        # tests don't exercise this endpoint shape). Caught by the end-to-end
-        # smoke test; keep this passthrough in sync with
+        # files_errored: persistent status='error' row count (storage.stats).
+        # Dropping the field in the explicit re-shape here would leave
+        # empty.js's "N files failed to index" warning line reading
+        # undefined and never rendering, and the qa_smoke field pin
+        # only catches it on a LIVE run (the unit tests don't exercise
+        # this endpoint shape). Keep this passthrough in sync with
         # storage.stats() whenever new aggregate fields are added.
         "files_errored": s.get("files_errored", 0),
         "total_duration_ms": s["total_duration_ms"],
@@ -1702,7 +1701,7 @@ async def list_indexed_files(
     # storage layer; mirror that at the API boundary via Query's
     # `pattern=` so an invalid value gets a clean Pydantic-style 422
     # naming the four valid choices. Matches the same input-validation
-    # pattern as SRTExportRequest.radius (commit 22060c9) — push the
+    # pattern as SRTExportRequest.radius — push the
     # check to the boundary so the engine never sees garbage and the
     # caller learns immediately why their request failed.
     status: str | None = Query(
@@ -1738,14 +1737,14 @@ async def list_indexed_files(
     offloaded to the thread pool so concurrent /api/health,
     /api/index/status polls, and the indexing toast stay responsive
     on big workspaces. Same pattern as /api/search, /api/diagnostics,
-    and da22bc6 (/api/file/thumbnails). For a 5k-file
+    and /api/file/thumbnails. For a 5k-file
     library the previous on-event-loop call blocked the loop for ~50 ms;
     the indexing-progress chrome would visibly stutter on every sidebar
     refresh during a large index run.
     """
     import asyncio
     # Sanity-clamp limit at the API boundary so a client can't ask for
-    # a million rows. Matches the SearchRequest pattern in 1d22dd6.
+    # a million rows. Matches the SearchRequest pattern.
     if limit is not None:
         if limit < 1:
             raise HTTPException(400, "limit must be >= 1")
@@ -1756,7 +1755,7 @@ async def list_indexed_files(
     def _gather():
         files = store.list_files(status=status, limit=limit)
         # Batch-fetch first-keyframe-per-file in one query (same window-fn
-        # pattern as search_filename in 7d58e0c). N+1-style per-file queries
+        # pattern as search_filename). N+1-style per-file queries
         # would balloon /api/files latency on big workspaces.
         thumbnail_by_file: dict[int, str] = {}
         if files:
@@ -1916,7 +1915,7 @@ async def transcript_window(
     Bench on the demo audiobook: 28 ms → 1.4 ms (20× speedup). Wrap in
     `asyncio.to_thread` so the still-sync sqlite calls don't block the
     event loop during the indexing-status poll storm. Same pattern as
-    /api/search, /api/diagnostics and 813b569 (/api/files).
+    /api/search, /api/diagnostics and /api/files.
     """
     import asyncio
     # Defensive clamp removed — Query(ge=0, le=30) above enforces it now.
@@ -2065,7 +2064,7 @@ async def serve_file(path: str = Query(..., min_length=1, max_length=4096)):
     Linux 4096) so a hostile local GET with `?path=A*10_000_000` 422s
     at the Pydantic boundary instead of burning CPU on
     `Path(...).resolve()` + the allowlist string-op + the DB lookup.
-    Mirrors the PathRequest cap (commit b6fb220) used by /api/reveal /
+    Mirrors the PathRequest cap used by /api/reveal /
     /api/open / /api/quicklook.
 
     Caching: thumbnails under workspace/db/thumbnails/ are effectively
@@ -2168,7 +2167,7 @@ async def export_clip_endpoint(req: ExportRequest):
     except subprocess.CalledProcessError as e:
         raise HTTPException(500, f"ffmpeg failed: {e.stderr.decode() if e.stderr else e}")
     except subprocess.TimeoutExpired as e:
-        # Commit 5de1191 added 120s / 300s ceilings to ffmpeg in clip.py.
+        # clip.py puts 120s / 300s ceilings on ffmpeg.
         # Without this catch, a hung ffmpeg (corrupted source, stalled SMB
         # mount) would propagate the raw Python TimeoutExpired up through
         # the asyncio thread pool as an unhandled 500 — the user's
@@ -2310,7 +2309,7 @@ async def export_fcpxml_endpoint(req: FCPXMLRequest):
     # wrap above and the /api/search engine.search wrap.
     #
     # probe_media propagates subprocess.TimeoutExpired if any source
-    # file is on a stalled mount (commit 5de1191 added the 30s
+    # file is on a stalled mount (with a 30s
     # ceiling). _probe_video_format's own try/except swallows it and
     # returns the safe (1920, 1080, 30) fallback, so it doesn't reach
     # us here — but probe_media doesn't have that fallback because
@@ -2318,8 +2317,8 @@ async def export_fcpxml_endpoint(req: FCPXMLRequest):
     # asset breaks the timeline math on import to FCP / DaVinci).
     # Catch TimeoutExpired explicitly and return 504 so the toast
     # message points the user at the actual cause instead of dumping
-    # a raw Python traceback. Same pattern + reasoning as commit
-    # bf2c0b5's /api/export/clip TimeoutExpired translation.
+    # a raw Python traceback. Same pattern + reasoning as the
+    # /api/export/clip TimeoutExpired translation.
     import asyncio
     try:
         result = await asyncio.to_thread(
@@ -2357,15 +2356,15 @@ class SRTExportRequest(BaseModel):
     to 30, leaving the caller wondering why the parameter was ignored).
 
     Pydantic-side bounds give a clean 422 with a specific message
-    instead of silent clamping or 404, matching the commit 03272e7
+    instead of silent clamping or 404, matching the
     Query(..., ge=1) treatment of /api/file/thumbnails + /api/transcript/
     window file_id params. The endpoint's own defensive `radius = max(1,
-    min(req.radius, 30))` clamp is removed in the same commit — it
-    becomes dead code once Pydantic guarantees the input is in range,
-    and removing it lets the user see a clean validation error for
+    min(req.radius, 30))` clamp is not needed: it
+    would be dead code once Pydantic guarantees the input is in range,
+    and leaving it out lets the user see a clean validation error for
     radius=0 instead of silent promotion to 1."""
     # file_ids are positive auto-increment SQLite IDs. ge=1 mirrors
-    # /api/transcript/window's Query(ge=1) + commit 03272e7's
+    # /api/transcript/window's Query(ge=1) and the
     # /api/file/thumbnails param. Without it, file_id=-1 silently
     # routed through the COUNT-rows-with-id=-1 query (returns 0) and
     # the endpoint raised 404 — but the 422 path is a faster, clearer
@@ -2425,7 +2424,7 @@ async def export_srt_endpoint(req: SRTExportRequest):
     # Pull only the window we need. Was loading ALL transcript_segments
     # for the file (a 6-hour audiobook = 3600 rows) just to find the
     # closest-by-ts_ms row via Python `abs()` and slice a small window
-    # — same pattern that commit 53274bf fixed in /api/transcript/window.
+    # (the pattern /api/transcript/window avoids).
     # Two indexed queries: (1) COUNT rows before the closest segment's
     # start_ms (= matched_idx), (2) LIMIT 2*radius+1 OFFSET matched_idx-radius
     # for the window. Bench on demo audiobook: 28 ms → 1.4 ms.
@@ -2592,8 +2591,8 @@ async def start_indexing(req: IndexRequest, background: BackgroundTasks):
     # concurrent /api/health, /api/stats, /api/index/status poll
     # waits, and the indexing-status toast visibly stalls before
     # showing "running" because the prep call hasn't returned yet.
-    # Same pattern as /api/search, 813b569 (/api/files),
-    # da22bc6 (/api/file/thumbnails) and /api/diagnostics.
+    # Same pattern as /api/search, /api/files,
+    # /api/file/thumbnails and /api/diagnostics.
     import asyncio
     files = await asyncio.to_thread(discover_files, folder)
     if not files:
@@ -2635,7 +2634,7 @@ async def start_indexing(req: IndexRequest, background: BackgroundTasks):
 async def cancel_indexing():
     """Request cancellation of the in-flight index pass.
 
-    Two-layer cancel (since commit 8ca4d91):
+    Two-layer cancel:
       - BETWEEN files: the loop checks `cancel_requested` before each
         next file → cleanest exit, current-file derived data is
         committed normally.
@@ -2659,7 +2658,7 @@ async def cancel_indexing():
     if not app.state.indexing.get("running"):
         return {"ok": True, "message": "Nothing to cancel (no index running)"}
     # Idempotent: a second cancel POST (impatient user clicking Stop
-    # again after commit 3d2b2d4's failed-cancel re-enable, or a curl
+    # again after the failed-cancel re-enable, or a curl
     # script double-tapping) MUST NOT re-append to the in-memory log
     # (toast would render two "Cancel requested" lines) NOR re-fire
     # the log_event (support threads would see two
@@ -2676,7 +2675,7 @@ async def cancel_indexing():
     # Log to tern-debug.log so support threads can see "user cancelled
     # at HH:MM with N/M files done" without asking for a screenshot of
     # the in-memory indexing-log shown in the toast. Mirror the
-    # observability pattern from commit 44eb5ae (index_refused_missing_binaries).
+    # observability pattern from index_refused_missing_binaries.
     log_event(
         "index_cancel_requested",
         f"user cancelled with {files_done}/{files_pending} files done",
@@ -2720,8 +2719,8 @@ def _run_indexing_task(files: list, language: Optional[str], force: bool):
         # Mid-file cancel: WhisperTranscriber polls this at 1 Hz inside
         # its wait loop. Pre-this-wire, Cancel only took effect between
         # files — a user clicking Stop on a 4-hour podcast transcription
-        # would have to wait the full transcription out (or, since
-        # commit b180c42, the wait_timeout ceiling of `max(300, dur)`
+        # would have to wait the full transcription out (or the
+        # wait_timeout ceiling of `max(300, dur)`
         # seconds — could still be HOURS). Reading from
         # app.state.indexing.cancel_requested means the same Cancel
         # button that already gates the between-files loop now also
@@ -2869,7 +2868,7 @@ async def remove_folder(req: RemoveFolderRequest):
     # /api/health, /api/index/status, and the live indexing-status poll
     # stall for the full duration (seconds on big folders). Offload to
     # the thread pool — same pattern as /api/search, /api/diagnostics
-    # and da22bc6 (/api/file/thumbnails).
+    # and /api/file/thumbnails.
     import asyncio
     result = await asyncio.to_thread(store.remove_folder, prefix)
     log_event(
@@ -2995,10 +2994,9 @@ class _CachedStaticFiles(StaticFiles):
     contacting the server — so a hot-patch the user just shipped
     wouldn't be picked up by an in-app reload (⌘R) for up to a day,
     forcing the "killall Tern + rm -rf ~/Library/WebKit/fm.tern.app
-    + open Tern.app" sequence to clear the cache. Commit 110d0db
-    surfaced this when a critical fix sat in /Applications/Tern.app
-    on disk but WKWebView kept serving the broken version from
-    cache. `no-cache` costs ~1 ms per asset (loopback 304) per page
+    + open Tern.app" sequence to clear the cache. A critical fix could
+    sit in /Applications/Tern.app on disk while WKWebView kept serving
+    the broken version from cache. `no-cache` costs ~1 ms per asset (loopback 304) per page
     load — acceptable for a local-first desktop app where "what's
     on disk is what runs" is more important than shaving 30ms off
     cold start. The 304 path still skips the body transfer; the

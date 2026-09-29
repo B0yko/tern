@@ -87,9 +87,9 @@ async function _renderList(listEl) {
       ? `<div class="empty-list-breakdown" style="font-size:11px;color:var(--text-3);margin-top:2px;">${kindParts.join(" · ")}${durationSuffix}</div>`
       : "";
     // Surface the persistent indexing-error count (status='error' rows
-    // in the files table, added to /api/stats in commit 4e3dfa3) as a
+    // in the files table, reported by /api/stats) as a
     // separate line below the breakdown. The PER-RUN errored count
-    // surfaces in the indexing toast (commit f2ff5f2); this is the
+    // surfaces in the indexing toast; this is the
     // ACCUMULATED across-runs count that the toast resets between
     // index passes. Without surfacing it here, a buyer with 3 failed
     // files from last week's indexing run has no in-app signal that
@@ -129,7 +129,7 @@ async function _renderList(listEl) {
     // backend hiccup and toast-spam erodes trust). But DO log to
     // console so devtools captures the actual failure for diagnostics
     // — previously the catch was a silent swallow, so a real
-    // backend regression on /api/files (e.g., the commit 813b569
+    // backend regression on /api/files (e.g., the
     // asyncio.to_thread wrap if it ever broke) looked identical to a
     // transient warmup race in the UI, with no diagnostic trace.
     console.error("empty-list /api/files failed", e);

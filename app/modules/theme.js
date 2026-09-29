@@ -44,10 +44,10 @@ export function savePrefs(prefs) {
   // Wrapped because prefs.js's _persist() is sync — an unguarded throw
   // here (private-browsing WKWebView, OS-restricted localStorage, full
   // quota) would skip applyPrefs() right after, so the user clicks a
-  // theme/accent and sees NOTHING change. Same pattern as recents.js
-  // (eb22047), bookmarks.js, and sidebar.js. The setting still applies
-  // for the current session; it just won't survive a restart.
-  // Diagnostic-trail addition (commit 8cef452 sibling): name the
+  // theme/accent and sees NOTHING change. Same pattern as recents.js,
+  // bookmarks.js, and sidebar.js. The setting still applies for the
+  // current session; it just won't survive a restart.
+  // Diagnostic-trail addition: name the
   // exception class so support diagnostics ("Inspector → Console")
   // can read the failure type out loud — without this, a user
   // reporting "my theme keeps reverting on restart" had no signal

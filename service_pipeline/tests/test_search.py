@@ -492,10 +492,9 @@ def test_filename_boost_unicode_basename_and_query():
     Hebrew etc. — anything where lower() and \\w work natively at
     3+ char token length).
 
-    NOTE: this test pre-dates the CJK carve-out — the "known limitation"
-    that 2-char CJK words like `会議` were excluded by the >=3 filter
-    was fixed in the next commit (see `_token_has_cjk` in search.py).
-    The dedicated CJK test below covers that behaviour."""
+    NOTE: this test covers the Latin >=3 filter; 2-char CJK words like
+    `会議` are allowed through by the CJK carve-out (see `_token_has_cjk`
+    in search.py). The dedicated CJK test below covers that behaviour."""
     hits = [
         # Cyrillic basename with Cyrillic query token
         SearchHit(file_id=1, file_path="/x/интервью_бюджет_2024.mp3", ts_ms=0,
@@ -883,7 +882,7 @@ def test_filename_hit_does_not_raise_the_visual_noise_floor():
 
 # ─── search() subset sources — no embed thread when "visual" not requested ───
 #
-# Commit 3c8b91d optimized search() by kicking off SigLIP embed_text on a
+# search() kicks off SigLIP embed_text on a
 # background thread CONCURRENTLY with the FTS5 channels. The branch that
 # creates the ThreadPoolExecutor is gated on `if "visual" in query.sources`
 # — if the caller only wants transcript+ocr, no thread is created (and no
@@ -897,9 +896,8 @@ def test_filename_hit_does_not_raise_the_visual_noise_floor():
 
 def test_search_with_no_visual_does_not_call_embedder(monkeypatch):
     """When query.sources omits 'visual', the embedder is never touched.
-    Before commit 3c8b91d there was no parallelism so the gate was implicit;
-    commit 3c8b91d makes the gate explicit via the ThreadPoolExecutor
-    creation. Either way, the contract is: no visual source = no embed
+    The gate is explicit: the ThreadPoolExecutor is only created when
+    'visual' is requested. The contract is: no visual source = no embed
     call = no SigLIP overhead. Pin it so a future refactor doesn't
     re-introduce a precompute-just-in-case that ships unnecessary
     MPS forward passes per search."""
@@ -941,8 +939,8 @@ def test_search_with_no_visual_does_not_call_embedder(monkeypatch):
     # Embedder never called — the MPS forward pass cost is saved
     assert embed_call_count[0] == 0, (
         f"embed_text called {embed_call_count[0]} times; expected 0 when "
-        "'visual' is not in query.sources (commit 3c8b91d gates the embed "
-        "executor on this check)"
+        "'visual' is not in query.sources (the embed "
+        "executor is gated on this check)"
     )
 
 
