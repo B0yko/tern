@@ -13,8 +13,12 @@
                                 escalation from any successful XSS.
     - object-src 'none'      — no <object>/<embed>/Flash escape hatch.
     - base-uri 'self'        — defeats <base href="…"> rebasing tricks.
-    - frame-ancestors 'none' — Tern can never be iframed, period
-                                (clickjacking class).
+    - frame-ancestors 'none' is not listed here on purpose: browsers ignore it
+                                in a <meta> policy (and log an error). The
+                                server sends this same policy plus
+                                frame-ancestors 'none' as a response header,
+                                so Tern can never be iframed (clickjacking
+                                class). See _CSP in api/main.py.
     - default-src 'self'     — everything not separately listed is
                                 same-origin (http://127.0.0.1:<port>).
     - img-src / media-src include data: + blob: so canvas snapshots and
@@ -29,7 +33,7 @@
   launch; the policy can stay strictly 'self' for both style-src and
   font-src.
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Tern — Local AI search</title>
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/tokens.css">
