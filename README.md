@@ -22,7 +22,7 @@
   <tr>
     <td align="center" width="200"><b>3 search channels</b><br><sub>speech · on-screen text · picture</sub></td>
     <td align="center" width="200"><b>On-device</b><br><sub>no media leaves the Mac</sub></td>
-    <td align="center" width="200"><b>539 tests</b><br><sub>pipeline · API · licence rules</sub></td>
+    <td align="center" width="200"><b>556 tests</b><br><sub>pipeline · API · licence rules</sub></td>
     <td align="center" width="200"><b>5 export formats</b><br><sub>MP4 · MP3 · SRT · CSV · FCPXML</sub></td>
   </tr>
 </table>
@@ -66,8 +66,9 @@ FCPXML timeline for Final Cut Pro export from the result list.
 Media and the index never leave the Mac: transcription, OCR and embedding
 all run locally. The network is used to fetch the models on first use (the
 Hugging Face library also revalidates its cached copy when it loads one),
-to activate a licence, for the update check, and to open Apple Maps when
-you click a photo's location.
+to activate a licence, and to open Apple Maps when you click a photo's
+location. The update check will use it too once an update endpoint is
+configured, which it is not yet (see [Status](#status)).
 
 ![Searching "hurricane" across NASA footage: the burned-in caption and the narration match the same moments, so the top hits are badged On-screen + Speech](docs/media/multi-channel.png)
 
@@ -96,7 +97,7 @@ demo podcast (the episodes are not included in this repository).*
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/media/fusion-dark.svg">
-  <img src="docs/media/fusion-light.svg" alt="Four channels (speech, on-screen text, picture and filename) are searched in parallel and weighted; hits are grouped into five-second windows per file, where agreement between channels earns a capped bonus; a filename boost, a per-file cap and a visual noise floor then produce one ranked list">
+  <img src="docs/media/fusion-light.svg" alt="Four channels (speech, on-screen text, picture and filename) are searched independently and weighted; hits are grouped into five-second windows per file, where agreement between channels earns a capped bonus; a filename boost, a per-file cap and a visual noise floor then produce one ranked list">
 </picture>
 
 Each channel is searched on its own, so one failing channel degrades the list
@@ -164,18 +165,24 @@ The parts that took real work, each with the code that does it:
   for footage with few scene cuts. ([`vision.py`](service_pipeline/tern/vision.py))
 - **Latency budget.** The SigLIP text embedding runs on a background thread
   while the FTS5 channels run, so their costs overlap instead of adding up;
-  the smoke test holds a search to a p50 under 100 ms.
+  `scripts/qa_smoke.py` holds a search to a p50 under 100 ms on Apple Silicon.
+  It is a local check; CI does not run it.
 - **The loopback API is treated as hostile.** CORS allows loopback and the
   Tauri origin only, a Host-header guard refuses any name that is not a
   loopback name on the port the server listens on (so a DNS-rebinding page
   is turned away), the licence endpoint is fixed by configuration, every
   endpoint that serves, opens or exports a file
-  checks a workspace-and-index allowlist before it checks existence, and
-  `/api/diagnostics` strips the home directory out of every path.
+  checks a workspace-and-index allowlist before it checks existence,
+  responses carry a Content-Security-Policy header (including
+  `frame-ancestors 'none'`, which a `<meta>` policy cannot express) so no
+  other page can frame the UI, and `/api/diagnostics` strips the home
+  directory out of every path.
   ([`api/main.py`](api/main.py))
 - **Exports that cannot corrupt a timeline.** Text exports are written
   through a temp file, fsync and rename; FCPXML strings are truncated before
-  they are escaped so an entity is never cut in half; CSV cells that would
+  they are escaped so an entity is never cut in half, and asset paths are
+  written as percent-encoded `file://` URLs so a folder with a space in it
+  still resolves in Final Cut; CSV cells that would
   run as spreadsheet formulas are neutralised.
   ([`clip.py`](service_pipeline/tern/clip.py), [`api/main.py`](api/main.py))
 - **Every blocking subprocess has a timeout,** sized to the job, and
@@ -216,10 +223,11 @@ scripts/init_demo.sh            # indexes demo/, then runs a smoke search
 ./run.sh                        # serves the app on the first free port from 18765
 ```
 
-The first index downloads the Whisper model (about 547 MB) into
+The first index downloads the Whisper model (about 574 MB) into
 `service_pipeline/models/` and SigLIP-2 (about 1.5 GB) into the Hugging Face
 cache. With those in place, `init_demo.sh` indexes the roughly forty minutes
-of demo media in about two minutes on an M-series MacBook Pro. Indexing
+of demo media in about two minutes on Apple Silicon (101 and 117 seconds in
+two runs on a Mac Studio M4 Max). Indexing
 through the app or the API counts against the 120-minute trial (the `tern`
 CLI does not); `TERN_STATE_DIR` moves the trial file.
 
@@ -252,7 +260,7 @@ permissions and timeouts.
 
 ## Tests
 
-539 tests: 168 for the pipeline, 358 for the API, and 13 for the licence
+556 tests: 171 for the pipeline, 372 for the API, and 13 for the licence
 server's seat rules.
 
 ```bash
@@ -269,9 +277,9 @@ clone runs green. [CI](.github/workflows/ci.yml) runs the same suites on a
 macOS runner with an empty workspace and the Hugging Face hub offline, the
 Deno suite on Linux, and a `cargo check` of the desktop shell.
 With the full runtime and the downloadable demo workspace, 15 API tests
-that need indexed podcast audio still skip; on the author's machine, whose
-demo also holds eight synthetic podcast episodes that are not in this
-repository, all 500 pass.
+that need indexed podcast audio still skip. On the author's machine, whose
+demo also holds seven synthetic podcast episodes and a screencast video that
+are not in this repository, all 543 Python tests pass.
 
 ## Layout
 
@@ -312,12 +320,19 @@ What is not finished:
 - **The updater is unconfigured.** `tauri.conf.json` carries a placeholder
   public key and endpoint, and `release.sh` refuses to build a signed release until it is
   replaced.
+- **No licence endpoint is compiled in.** The desktop shell does not set
+  `TERN_LICENSE_SERVER`, so a built app cannot activate a licence until a
+  build supplies the endpoint (see [license_server/](license_server/)).
 - **One dependency blocks distribution.** pillow-heif's macOS wheel bundles
   the GPL x265 encoder, so HEIC decoding needs another library before any
   build ships ([third_party/NOTICE.md](third_party/NOTICE.md)).
 - **The trial gate is advisory.** The quota is enforced in the API, so the
   bundled CLI indexes without it, and licence verdicts are cached unsigned.
   It stops casual copying, not a determined user.
+- **Symlinked media files are indexed but not served.** The index stores a
+  file's path as walked, and the file endpoints compare the resolved target
+  against it, so playing or exporting a symlinked file is refused with a 403.
+  Real files are unaffected.
 - **Moving a workspace leaves stale paths.** Only the seeded demo's paths
   are re-rooted in SQLite on start, and the keyframe metadata in ChromaDB
   never is, so visual hits in a moved workspace show blank thumbnails.

@@ -94,7 +94,7 @@ if [ ! -x "$RES/bin/whisper-cli" ]; then
 fi
 green "  whisper-cli + ggml backends ready"
 
-# ── 4. Whisper Q5 model (downloads ~547 MB on first run) ───────────────────
+# ── 4. Whisper Q5 model (downloads ~574 MB on first run) ───────────────────
 # Real bug previously: script runs with `set -uo pipefail` (no -e), so if
 # curl errored partway through (network blip, HF 503, Ctrl-C right before
 # completion), the partial .part file got renamed to the target. Next
@@ -102,14 +102,14 @@ green "  whisper-cli + ggml backends ready"
 # corrupted model that fails Whisper load with a cryptic "magic number
 # mismatch" at runtime. Fix: --fail on curl so HTTP errors propagate,
 # check exit code before renaming, AND verify the final file is at
-# least 400 MB (full Q5 binary is 547 MB; <400 MB is definitely
+# least 400 MB (full Q5 binary is 547 MiB; <400 MB is definitely
 # truncated).
 MODEL="$RES/models/ggml-large-v3-turbo-q5_0.bin"
 MODEL_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin"
-MODEL_MIN_BYTES=$((400 * 1024 * 1024))  # 400 MB — full model is ~547 MB
+MODEL_MIN_BYTES=$((400 * 1024 * 1024))  # 400 MiB — full model is ~547 MiB
 MODEL_SIZE=$(stat -f%z "$MODEL" 2>/dev/null || echo 0)
 if [ ! -s "$MODEL" ] || [ "$MODEL_SIZE" -lt "$MODEL_MIN_BYTES" ]; then
-  echo "  downloading Whisper Q5 model (547 MB)…"
+  echo "  downloading Whisper Q5 model (574 MB)…"
   # Defensive: nuke any stale .part / truncated $MODEL from a previous
   # failed run so we never confuse leftover bytes with valid resume.
   rm -f "$MODEL.part" "$MODEL"
