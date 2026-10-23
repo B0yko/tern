@@ -298,9 +298,20 @@ def main() -> int:
         else:
             qa.skip(f"visual: '{q}' video hit", "no BBB video hits (workspace may not have indexed BBB)")
 
+    # The 'pricing' and "customer success" checks below are backed by the
+    # synthetic podcast episodes, which are not in the repository (the
+    # downloadable demo has video and photos only). With no audio indexed
+    # there is nothing for them to find, so they skip instead of failing.
+    has_podcast_audio = any((f.get("mime") or "").startswith("audio/")
+                            for f in (get(args.base, "/api/files").get("files") or []))
+
     # ── Transcript search ──────────────────────────────────────
     qa.section("Transcript search (speech-to-text)")
     for q, expect_kind in [("stanford", "video"), ("pricing", "audio")]:
+        if expect_kind == "audio" and not has_podcast_audio:
+            qa.skip(f"transcript: '{q}' returns hit with snippet",
+                    "no audio indexed (the synthetic podcast episodes are not in the repository)")
+            continue
         r = search(args.base, q, limit=5)
         transcript_hits = [h for h in r["hits"] if h["source"] in ("transcript", "multi") and h.get("snippet")]
         qa.check(f"transcript: '{q}' returns hit with snippet",
@@ -329,21 +340,25 @@ def main() -> int:
     # bundled demo, so a 0-hit return is a real regression — not a
     # demo-content drift issue.
     qa.section("Exact-phrase search (quoted query)")
-    r = search(args.base, '"customer success"', limit=20)
-    qa.check("quoted search: '\"customer success\"' returns hits",
-             r["count"] >= 1,
-             f"count={r['count']} — sanitize_fts_query may be eating "
-             f"the quotes or FTS5 phrase-match regressed")
-    # Each returned snippet from a quoted phrase search must literally
-    # contain BOTH words in sequence (with normal interstitial whitespace).
-    # A regression that drops quote-preservation typically returns hits
-    # for either word alone — those would NOT contain the literal
-    # "customer success" two-word sequence.
-    snippet_hits = [h for h in r["hits"] if "customer success" in (h.get("snippet") or "").lower().replace("<mark>", "").replace("</mark>", "")]
-    qa.check("quoted search: at least one snippet contains the exact 'customer success' phrase",
-             len(snippet_hits) >= 1,
-             f"got {len(r['hits'])} hits but none contained the exact phrase — "
-             f"FTS5 phrase-match may have regressed to bag-of-words")
+    if not has_podcast_audio:
+        qa.skip("quoted search: '\"customer success\"'",
+                "no audio indexed (the synthetic podcast episodes are not in the repository)")
+    else:
+        r = search(args.base, '"customer success"', limit=20)
+        qa.check("quoted search: '\"customer success\"' returns hits",
+                 r["count"] >= 1,
+                 f"count={r['count']} — sanitize_fts_query may be eating "
+                 f"the quotes or FTS5 phrase-match regressed")
+        # Each returned snippet from a quoted phrase search must literally
+        # contain BOTH words in sequence (with normal interstitial whitespace).
+        # A regression that drops quote-preservation typically returns hits
+        # for either word alone — those would NOT contain the literal
+        # "customer success" two-word sequence.
+        snippet_hits = [h for h in r["hits"] if "customer success" in (h.get("snippet") or "").lower().replace("<mark>", "").replace("</mark>", "")]
+        qa.check("quoted search: at least one snippet contains the exact 'customer success' phrase",
+                 len(snippet_hits) >= 1,
+                 f"got {len(r['hits'])} hits but none contained the exact phrase — "
+                 f"FTS5 phrase-match may have regressed to bag-of-words")
 
     # ── OCR search ──────────────────────────────────────────────
     qa.section("OCR search (on-screen text)")
