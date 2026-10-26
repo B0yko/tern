@@ -5,6 +5,17 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
+from urllib.parse import quote
+
+
+def _file_url(path: str) -> str:
+    """A `file://` URL for an absolute path, percent-encoded.
+
+    FCPXML's `src` is a URL, not a path. A raw path with a space, `#` or `%`
+    in it ("/Users/me/My Podcast/ep 1.mp4") is not a valid URL, and Final Cut
+    reports that media as missing on import. `quote` leaves `/` alone and
+    encodes everything else that is not URL-safe, UTF-8 for non-ASCII."""
+    return "file://" + quote(path, safe="/")
 
 
 def _xml_escape(s: str) -> str:
@@ -230,16 +241,16 @@ def export_fcpxml(
         asset_map[file_path] = asset_id
         info = probe_media(Path(file_path))
         duration_s = info["duration_ms"] / 1000.0
-        # Uniformly XML-escape: src (file URL path), name (stem). Both
-        # land inside attribute values so all five reserved chars must
-        # go through the same escape — a filename like `<bad>.mp4` or
-        # `Sam & Co's "intro".mp4` would have produced malformed XML
-        # under the prior partial-escape (`&` + `"` only).
-        src_attr = _xml_escape(file_path)
+        # Percent-encode the path into a file URL first, then XML-escape
+        # both attribute values. Both land inside attribute values so all
+        # five reserved chars must go through the same escape — a filename
+        # like `<bad>.mp4` or `Sam & Co's "intro".mp4` would have produced
+        # malformed XML under the prior partial-escape (`&` + `"` only).
+        src_attr = _xml_escape(_file_url(file_path))
         name = _xml_escape(Path(file_path).stem)
         assets_xml.append(
             f'    <asset id="r{asset_id}" name="{name}" '
-            f'src="file://{src_attr}" duration="{duration_s}s" '
+            f'src="{src_attr}" duration="{duration_s}s" '
             f'hasVideo="1" hasAudio="1" format="r0"/>'
         )
         asset_id_counter += 1

@@ -144,6 +144,75 @@ def test_a_trial_with_room_left_is_not_refused_by_the_quota(client, state_dir, t
     assert r.status_code != 402
 
 
+def test_index_answers_503_when_the_image_model_cannot_load(client, state_dir, tmp_path, monkeypatch):
+    """First run with no network and no cached SigLIP-2 weights: indexing
+    must say so with a 503 and a message the app can show, not escape as an
+    unhandled 500. This is also what keeps the two quota tests above stable
+    on a machine that has the binaries installed but not the model yet."""
+    monkeypatch.setattr("shutil.which", lambda name, *a, **k: f"/usr/bin/{name}")
+
+    def _no_model(app):
+        raise OSError("We couldn't connect to 'https://huggingface.co' to load the files")
+
+    monkeypatch.setattr(main, "get_engine", _no_model)
+    folder = tmp_path / "archive" / "episodes"
+    folder.mkdir(parents=True)
+    (folder / "ep01.mp3").write_bytes(b"")
+
+    r = client.post("/api/index", json={"folder": str(folder)})
+    assert r.status_code == 503, f"expected 503, got {r.status_code}: {r.text[:200]}"
+    detail = r.json()["detail"]
+    assert "SigLIP" in detail and "OSError" in detail
+    assert "network connection" in detail
+
+
+def test_the_503_does_not_blame_the_network_for_other_failures(client, state_dir, tmp_path, monkeypatch):
+    """A locked Chroma store or an out-of-memory error is not a download
+    problem, so the message must name the real exception and leave the
+    network out of it."""
+    monkeypatch.setattr("shutil.which", lambda name, *a, **k: f"/usr/bin/{name}")
+
+    def _broken_store(app):
+        raise RuntimeError("could not acquire the Chroma lock")
+
+    monkeypatch.setattr(main, "get_engine", _broken_store)
+    folder = tmp_path / "archive" / "episodes"
+    folder.mkdir(parents=True)
+    (folder / "ep01.mp3").write_bytes(b"")
+
+    r = client.post("/api/index", json={"folder": str(folder)})
+    assert r.status_code == 503
+    detail = r.json()["detail"]
+    assert "RuntimeError" in detail and "Chroma lock" in detail
+    assert "network connection" not in detail
+
+
+def test_a_second_index_request_that_loses_the_race_gets_409(client, state_dir, tmp_path, monkeypatch):
+    """The folder walk yields to the event loop, so a second /api/index can
+    pass the first `running` check while the first is still walking. Both
+    used to start a run. Simulate the loser: another request claims the run
+    while this one is inside discover_files."""
+    monkeypatch.setattr("shutil.which", lambda name, *a, **k: f"/usr/bin/{name}")
+    monkeypatch.setattr(main, "get_engine", lambda app: (None, None, None))
+    started = []
+
+    def _walk_while_another_request_wins(folder):
+        main.app.state.indexing["running"] = True      # the winner got there first
+        return [folder / "ep01.mp3"]
+
+    monkeypatch.setattr(main, "discover_files", _walk_while_another_request_wins)
+    monkeypatch.setattr(main, "_run_indexing_task", lambda *a, **k: started.append(a))
+    folder = tmp_path / "archive" / "episodes"
+    folder.mkdir(parents=True)
+
+    try:
+        r = client.post("/api/index", json={"folder": str(folder)})
+    finally:
+        main.app.state.indexing["running"] = False
+    assert r.status_code == 409, f"expected 409, got {r.status_code}: {r.text[:200]}"
+    assert not started, "the losing request still started a run"
+
+
 def test_a_corrupt_trial_file_refuses_indexing(client, state_dir, tmp_path):
     """Deleting the counter must not be a way to reset the trial."""
     (state_dir / "trial.json").write_text("{ mangled")
@@ -298,6 +367,54 @@ def test_activation_sends_a_machine_id_for_seat_counting(client, state_dir, monk
     assert sent["body"].get("machine_id"), "no machine_id in the activation body"
     assert len(sent["body"]["machine_id"]) >= 16
     assert sent["body"]["app_version"]
+
+
+def _licence_server_saying(monkeypatch, verdicts):
+    """Make the licence server answer each activation with the next verdict
+    in `verdicts` (a list of is_valid booleans)."""
+    answers = iter(verdicts)
+
+    class _FakeResponse:
+        def __init__(self, is_valid): self.is_valid = is_valid
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return json.dumps({"is_valid": self.is_valid}).encode()
+
+    import urllib.request
+    monkeypatch.setattr(urllib.request, "urlopen",
+                        lambda req, timeout=None: _FakeResponse(next(answers)))
+    endpoint = "https://licence.example.com"
+    monkeypatch.setattr(main, "_LICENSE_EXTRA_SERVERS", (endpoint,))
+    return endpoint
+
+
+def test_a_mistyped_key_does_not_unlicense_an_active_licence(client, state_dir, monkeypatch):
+    """Typing a wrong key into the activation box used to overwrite the cached
+    licence with is_valid=false, so a licensed machine fell back to the trial
+    until the right key was entered again."""
+    endpoint = _licence_server_saying(monkeypatch, [True, False])
+
+    good = client.post("/api/license/activate",
+                       json={"license_key": "TERN-GOOD-KEY", "server_url": endpoint})
+    assert good.json()["is_valid"] is True
+    assert main._is_licensed()
+
+    bad = client.post("/api/license/activate",
+                      json={"license_key": "TERN-TYPO-KEY", "server_url": endpoint})
+    assert bad.json()["is_valid"] is False, "the UI must still be told the typed key is invalid"
+    assert main._is_licensed(), "a failed activation of a different key unlicensed the machine"
+    assert main._load_license_cache()["license_key"] == "TERN-GOOD-KEY"
+
+
+def test_a_rejection_of_the_active_key_itself_is_recorded(client, state_dir, monkeypatch):
+    """Re-validating the SAME key and being told it is no longer valid
+    (revoked, expired) must still take the licence away."""
+    endpoint = _licence_server_saying(monkeypatch, [True, False])
+
+    client.post("/api/license/activate", json={"license_key": "TERN-GOOD-KEY", "server_url": endpoint})
+    assert main._is_licensed()
+    client.post("/api/license/activate", json={"license_key": "TERN-GOOD-KEY", "server_url": endpoint})
+    assert not main._is_licensed()
 
 
 def test_the_configured_url_is_the_endpoint_not_a_prefix(client, state_dir, monkeypatch):

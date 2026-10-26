@@ -288,7 +288,45 @@ def test_export_fcpxml_escapes_filename_with_special_chars(tmp_path, monkeypatch
     asset = tree.find(".//{*}asset") or tree.find(".//asset")
     assert asset is not None
     src = asset.get("src", "")
-    assert src.endswith(weird), f"src round-trip failed: {src!r} should end with {weird!r}"
+    # `src` is a file URL, so the path comes back percent-encoded; decoding
+    # it must give the original path.
+    from urllib.parse import unquote, urlparse
+    parsed = urlparse(src)
+    assert parsed.scheme == "file", src
+    assert unquote(parsed.path) == weird, f"src round-trip failed: {src!r} should decode to {weird!r}"
+
+
+def test_export_fcpxml_src_is_a_valid_file_url(tmp_path, monkeypatch):
+    """Regression: `src` used to be `file://` + the raw path, so a folder or
+    file name with a space (the usual case on a Mac) gave a URL Final Cut
+    could not resolve and the clip came in as missing media. Spaces, `#`
+    and `%` must be percent-encoded; plain paths stay readable."""
+    import xml.etree.ElementTree as ET
+    from tern import audio as _audio_mod
+    monkeypatch.setattr(_audio_mod, "probe_media",
+                        lambda p: {"duration_ms": 60_000, "bit_rate": 0, "format_name": "mp4"})
+
+    class _FakeHit:
+        ts_ms = 0
+        duration_ms = 2000
+        snippet = "test"
+        source = "speech"
+
+        def __init__(self, file_path):
+            self.file_path = file_path
+
+    cases = {
+        "/Users/me/My Podcast/ep 1.mp4": "file:///Users/me/My%20Podcast/ep%201.mp4",
+        "/Volumes/Edit #2/100% done.mp4": "file:///Volumes/Edit%20%232/100%25%20done.mp4",
+        "/Users/me/Épisode.mp4": "file:///Users/me/%C3%89pisode.mp4",
+        "/Users/me/plain/clip.mp4": "file:///Users/me/plain/clip.mp4",
+    }
+    for path, expected in cases.items():
+        out = tmp_path / "u.fcpxml"
+        export_fcpxml(hits=[_FakeHit(path)], project_name="x", out_path=out)
+        asset = ET.fromstring(out.read_text()).find(".//asset")
+        assert asset is not None
+        assert asset.get("src") == expected, (path, asset.get("src"))
 
 
 def test_export_fcpxml_no_mid_entity_truncation_in_name_attribute(tmp_path, monkeypatch):

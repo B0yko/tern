@@ -30,6 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
+from starlette.datastructures import MutableHeaders
 
 # Pull in the working tern pipeline.
 # main.py is at tern/api/main.py — two parents up is tern/, then service_pipeline/.
@@ -524,6 +525,53 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ─── Response security headers ───────────────────────────────────────────
+# The policy app/index.html carries in a <meta> tag (a test keeps the two in
+# step), now also sent as a header, plus `frame-ancestors 'none'`. That
+# directive only works as a header: browsers ignore it in a <meta> CSP, so
+# before this nothing stopped another page from framing the UI and overlaying
+# it. X-Frame-Options covers browsers that predate frame-ancestors.
+_CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+    "font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; "
+    "connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; "
+    "frame-ancestors 'none'"
+)
+# Swagger UI and ReDoc load their scripts from a CDN, which this policy would
+# block, so the generated API docs keep their own defaults.
+_SECURITY_HEADERS_SKIP = ("/docs", "/redoc")
+
+
+def _skips_security_headers(path: str) -> bool:
+    return any(path == p or path.startswith(p + "/") for p in _SECURITY_HEADERS_SKIP)
+
+
+class _SecurityHeaders:
+    """Pure ASGI, so streamed and ranged file responses pass through untouched."""
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or _skips_security_headers(scope["path"]):
+            await self.inner(scope, receive, send)
+            return
+
+        async def send_with_headers(message):
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers.setdefault("Content-Security-Policy", _CSP)
+                headers.setdefault("X-Frame-Options", "DENY")
+                headers.setdefault("X-Content-Type-Options", "nosniff")
+                headers.setdefault("Referrer-Policy", "no-referrer")
+            await send(message)
+
+        await self.inner(scope, receive, send_with_headers)
+
+
+app.add_middleware(_SecurityHeaders)
 
 
 # ─── Host-header guard (DNS rebinding) ───────────────────────────────────
@@ -1156,7 +1204,13 @@ async def license_activate(req: LicenseActivateRequest):
             "validated_at": _now_iso(),
             "message": payload.get("message"),
         }
-        _save_license_cache(cache)
+        # A key that fails validation must not replace a licence that is
+        # already active: mistyping a key in the activation box would drop a
+        # licensed machine back to the trial. A rejection of the SAME key
+        # (revoked, expired) is still recorded.
+        prev = _load_license_cache()
+        if is_valid or not prev.get("is_valid") or prev.get("license_key") == key:
+            _save_license_cache(cache)
         log_event("license_activate", f"validated key {key[:8]}…", is_valid=is_valid)
         return {"ok": True, **cache, "license_key": key[:8] + "…"}
     except Exception as e:
@@ -1319,7 +1373,7 @@ def _get_config(app: FastAPI):
         config.chroma_path = (WORKSPACE_PATH / "db" / "chroma").resolve()
         config.thumbnails_path = (WORKSPACE_PATH / "db" / "thumbnails").resolve()
         # Prefer bundled Whisper model (passed via TERN_MODEL_DIR by
-        # the Tauri sidecar) over the auto-download path. Saves ~547 MB
+        # the Tauri sidecar) over the auto-download path. Saves ~574 MB
         # network fetch on first launch.
         bundled_model_dir = os.environ.get("TERN_MODEL_DIR", "")
         bundled_model = Path(bundled_model_dir) / "ggml-large-v3-turbo-q5_0.bin" if bundled_model_dir else None
@@ -2399,6 +2453,20 @@ async def export_fcpxml_endpoint(req: FCPXMLRequest):
     from tern.models import SearchHit
     hits = [SearchHit(**{k: v for k, v in h.items() if k in SearchHit.model_fields}) for h in req.hits]
 
+    # The hits carry source paths straight from the request body and the
+    # exporter runs ffprobe on every one, so each must pass the same
+    # workspace-and-index allowlist as /api/export/clip, and before anything
+    # touches the disk.
+    for hit in hits:
+        try:
+            src = Path(hit.file_path).resolve()
+        except (ValueError, OSError):
+            raise HTTPException(400, "Invalid source path")
+        if not _is_allowed_serve_path(src):
+            log_event("export_fcpxml_denied", f"refused source outside allowlist: {src}",
+                      level="WARN", path=str(src))
+            raise HTTPException(403, f"Source path not allowed: {src}")
+
     out_dir = WORKSPACE_PATH / "exports"
     out_dir.mkdir(exist_ok=True)
     safe_name = "".join(c if c.isalnum() else "_" for c in req.project_name)[:40]
@@ -2680,7 +2748,23 @@ async def start_indexing(req: IndexRequest, background: BackgroundTasks):
             f"GET /api/runtime-check for the full list)."
         )
 
-    engine, store, config = get_engine(app)
+    # The first run downloads the SigLIP-2 weights (about 1.5 GB) here. With
+    # no network and nothing cached the load raises; answer with a message
+    # the app can show instead of an unhandled 500.
+    try:
+        engine, store, config = get_engine(app)
+    except Exception as e:
+        log_event("index_refused_model_unavailable",
+                  f"could not load the SigLIP-2 model: {e}", level="ERROR",
+                  folder=str(folder))
+        hint = (" The first run downloads it (about 1.5 GB), so it needs a "
+                "network connection; after that Tern works offline."
+                if isinstance(e, OSError) else "")
+        raise HTTPException(
+            503,
+            f"The SigLIP-2 image model could not be loaded "
+            f"({type(e).__name__}: {str(e)[:200]}).{hint}"
+        )
 
     # Discover files first to set total count.
     #
@@ -2700,6 +2784,14 @@ async def start_indexing(req: IndexRequest, background: BackgroundTasks):
     files = await asyncio.to_thread(discover_files, folder)
     if not files:
         return {"ok": False, "message": "No supported media files found in folder", "folder": str(folder)}
+
+    # The folder walk above yields to the event loop, so a second request
+    # (a double-clicked Index button, a retrying script) can pass the first
+    # `running` check while this one is still walking, and both would start a
+    # run on the same index. Check again here: from this line to the update
+    # below there is no await, so the claim is atomic.
+    if app.state.indexing["running"]:
+        raise HTTPException(409, "Indexing already in progress")
 
     app.state.indexing.update({
         "running": True,
@@ -3112,9 +3204,12 @@ class _CachedStaticFiles(StaticFiles):
             if path.startswith("fonts/") or path == "fonts.css":
                 # woff2 + the local fonts.css are content-stable.
                 resp.headers["Cache-Control"] = "public, max-age=604800, immutable"
-            elif path.endswith((".css", ".js")):
+            elif path.endswith((".css", ".js", ".html")) or path in ("", "."):
                 # See class docstring: force revalidation so hot-patches
                 # are picked up by the next page load, not held for 24h.
+                # The page itself counts: "/" is served as index.html (path
+                # "."), and without a header the browser reused a stale copy
+                # on heuristic freshness after the file changed.
                 resp.headers["Cache-Control"] = "no-cache"
         return resp
 

@@ -153,6 +153,61 @@ def test_sanitize_fts_query_dash_does_not_crash_fts5():
             )
 
 
+def test_sanitize_fts_query_uppercase_operators_do_not_crash_fts5():
+    """Regression: FTS5 reads a bare uppercase AND / OR / NOT / NEAR as an
+    operator. The sanitiser joins the words with explicit ANDs, so
+    "rock OR roll" became "rock AND OR AND (roll* OR roll)" and raised
+    `fts5: syntax error near "OR"`. search.py swallows that per channel, so
+    the user saw zero transcript and OCR hits and no hint why.
+
+    Fix: the four operator words are lowercased, which makes them ordinary
+    words, so the query finds text that contains them.
+    """
+    import sqlite3
+    c = sqlite3.connect(":memory:")
+    c.execute("CREATE VIRTUAL TABLE t USING fts5(content, tokenize='porter unicode61')")
+    for text in ("rock or roll", "do not disturb", "salt and pepper",
+                 "ask the or", "near the sea", "a q and a session"):
+        c.execute("INSERT INTO t VALUES (?)", (text,))
+
+    queries = [
+        ("rock OR roll", "rock or roll"),
+        ("do NOT disturb", "do not disturb"),
+        ("Salt AND pepper", "salt and pepper"),
+        ("ask the OR", "ask the or"),
+        ("NEAR the sea", "near the sea"),
+        ("Q AND A", "a q and a session"),
+        ('"rock OR roll"', "rock or roll"),
+        # A bare operator must not crash either; there is nothing to find.
+        ("NOT", None),
+        ("AND", None),
+        ("OR", None),
+        ("the NEAR sea", None),
+    ]
+    for raw, expected_match_text in queries:
+        sanitized = sanitize_fts_query(raw)
+        try:
+            rows = list(c.execute(
+                "SELECT content FROM t WHERE t MATCH ?", (sanitized,)
+            ))
+        except sqlite3.OperationalError as e:
+            raise AssertionError(
+                f"sanitized query {sanitized!r} (from {raw!r}) crashed FTS5: {e}"
+            )
+        if expected_match_text is not None:
+            assert (expected_match_text,) in rows, (
+                f"sanitized {sanitized!r} (from {raw!r}) didn't find "
+                f"expected row {expected_match_text!r}; got {rows!r}"
+            )
+
+
+def test_sanitize_fts_query_keeps_words_that_contain_an_operator():
+    """The operator rule is whole-word: ANDROID, ORACLE and NOTE are words."""
+    assert "ANDROID" in sanitize_fts_query("ANDROID")
+    assert "ORACLE" in sanitize_fts_query("ORACLE")
+    assert "NOTE" in sanitize_fts_query("NOTE")
+
+
 def test_sanitize_fts_query_trailing_space_disables_wildcard():
     """Docstring on sanitize_fts_query says the wildcard is only added
     when the user "looks like they're still typing" — i.e., the raw

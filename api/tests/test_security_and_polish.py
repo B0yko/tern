@@ -504,6 +504,60 @@ def test_export_clip_translates_ffmpeg_timeout_to_504(client, tmp_path, monkeypa
         except Exception: pass
 
 
+def test_export_fcpxml_rejects_path_outside_allowlist(client, monkeypatch):
+    """/api/export/fcpxml takes source paths from the request body and runs
+    ffprobe on each, so it needs the same allowlist as /api/export/clip.
+    Pre-fix a hit for /etc/passwd went straight to the exporter. The refusal
+    must come before the exporter (and ffprobe) runs at all."""
+    import main as main_mod
+
+    def _must_not_run(*a, **kw):
+        raise AssertionError("export_fcpxml ran for a path outside the allowlist")
+
+    monkeypatch.setattr(main_mod, "export_fcpxml", _must_not_run)
+    r = client.post("/api/export/fcpxml", json={
+        "hits": [{"file_id": 1, "file_path": "/etc/passwd", "ts_ms": 0,
+                  "duration_ms": 2000, "snippet": "x", "source": "visual",
+                  "score": 0.5}],
+        "project_name": "Denied",
+    })
+    assert r.status_code == 403, f"expected 403, got {r.status_code}: {r.text[:200]}"
+
+
+def test_export_fcpxml_refuses_an_unresolvable_path_instead_of_failing(client, monkeypatch):
+    """A NUL byte makes Path.resolve() raise ValueError; that must be a clean
+    400, not a 500."""
+    import main as main_mod
+    monkeypatch.setattr(main_mod, "export_fcpxml",
+                        lambda *a, **k: (_ for _ in ()).throw(AssertionError("exporter ran")))
+    r = client.post("/api/export/fcpxml", json={
+        "hits": [{"file_id": 1, "file_path": "/tmp/a\u0000b.mp4", "ts_ms": 0,
+                  "duration_ms": 2000, "snippet": "x", "source": "visual",
+                  "score": 0.5}],
+        "project_name": "Nul",
+    })
+    assert r.status_code == 400, f"expected 400, got {r.status_code}: {r.text[:200]}"
+
+
+def test_export_fcpxml_accepts_workspace_path(client, monkeypatch):
+    """The allowlist still lets a path under the workspace through."""
+    import main as main_mod
+
+    def _stub_export(hits, project_name, out_path):
+        out_path.write_text("<?xml version='1.0'?><stub/>")
+        return out_path
+
+    monkeypatch.setattr(main_mod, "export_fcpxml", _stub_export)
+    inside = main_mod.WORKSPACE_PATH / "exports" / "inside.mp4"
+    r = client.post("/api/export/fcpxml", json={
+        "hits": [{"file_id": 1, "file_path": str(inside), "ts_ms": 0,
+                  "duration_ms": 2000, "snippet": "x", "source": "visual",
+                  "score": 0.5}],
+        "project_name": "Allowed",
+    })
+    assert r.status_code == 200, f"expected 200, got {r.status_code}: {r.text[:200]}"
+
+
 def test_export_fcpxml_translates_ffprobe_timeout_to_504(client, monkeypatch):
     """Mirror of test_export_clip_translates_ffmpeg_timeout_to_504 for the
     FCPXML endpoint. probe_media (ceiling = 30s) is called
@@ -529,6 +583,9 @@ def test_export_fcpxml_translates_ffprobe_timeout_to_504(client, monkeypatch):
     # Replace the top-level `export_fcpxml` symbol in main so the endpoint's
     # `await asyncio.to_thread(export_fcpxml, ...)` call lands in our stub.
     monkeypatch.setattr(main_mod, "export_fcpxml", _stub_timeout)
+    # The source path is a stand-in, not an indexed file; this test is about
+    # the timeout translation, so let it past the allowlist gate.
+    monkeypatch.setattr(main_mod, "_is_allowed_serve_path", lambda p: True)
 
     r = client.post("/api/export/fcpxml", json={
         "hits": [{"file_id": 1, "file_path": "/tmp/fake.mp4", "ts_ms": 0,
@@ -1100,6 +1157,9 @@ def test_export_fcpxml_logs_success_event_with_hit_count(client, monkeypatch):
         out_path.write_text("<?xml version='1.0'?><stub/>")
         return out_path
     monkeypatch.setattr(main, "export_fcpxml", _stub_export)
+    # Stand-in source paths again: past the allowlist gate, which has its own
+    # tests (test_export_fcpxml_rejects_path_outside_allowlist).
+    monkeypatch.setattr(main, "_is_allowed_serve_path", lambda p: True)
 
     r = client.post("/api/export/fcpxml", json={
         "hits": [
