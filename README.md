@@ -345,3 +345,5 @@ explains how the LGPL obligations are met in a bundle.
 Demo footage in the media above: Big Buck Bunny © 2008 Blender Foundation,
 www.bigbuckbunny.org, CC BY 3.0. NASA footage is in the public domain. The
 speech-search demo uses synthetic podcast audio.
+
+Built by [Andrii Boiko](https://boiko.ai/) · [LinkedIn](https://www.linkedin.com/in/andriyboyko/) · [Project overview](https://boiko.ai/work/tern/).
