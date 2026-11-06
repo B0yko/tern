@@ -10,7 +10,7 @@
 #
 # Indexing the three sets (29 files, about 40 minutes of video) takes a couple
 # of minutes on Apple Silicon. The first run also downloads the Whisper Q5
-# model (~547 MB) into service_pipeline/models/ if it is missing, and the
+# model (~574 MB) into service_pipeline/models/ if it is missing, and the
 # SigLIP-2 weights (~1.5 GB) into the Hugging Face cache. Indexing goes
 # through /api/index, so it counts against the 120-minute trial like any
 # other indexing done through the app.
@@ -186,6 +186,21 @@ while true; do
 done
 echo ""
 green "  indexing done"
+
+# "Done" only means the run ended. Files the trial refused (skipped) or that
+# failed are counted separately, and a half-indexed demo makes the smoke test
+# below pass or fail for the wrong reason, so say so here.
+SKIPPED=$(echo "$S" | python3 -c "import sys,json; print(json.load(sys.stdin).get('files_skipped',0))" 2>/dev/null)
+ERRORED=$(echo "$S" | python3 -c "import sys,json; print(json.load(sys.stdin).get('files_errored',0))" 2>/dev/null)
+if [ "${SKIPPED:-0}" != "0" ] || [ "${ERRORED:-0}" != "0" ]; then
+  red "  but ${SKIPPED:-0} file(s) were skipped and ${ERRORED:-0} failed, so the demo is incomplete."
+  echo "    Skipped usually means the 120-minute trial is spent: every run of this script"
+  echo "    indexes about 40 minutes of media. Start from a fresh trial with another state"
+  echo "    directory, for example:"
+  echo "      TERN_STATE_DIR=\$(mktemp -d) scripts/init_demo.sh"
+  echo "    The reason for each file is in /tmp/tern_init.log."
+  exit 1
+fi
 
 bold ""
 bold "── smoke test ──"

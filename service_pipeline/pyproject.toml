@@ -9,7 +9,7 @@ dependencies = [
     "click",
     "ffmpeg-python",
     "numpy",
-    "pillow",
+    "pillow>=13.0.0",
     "pillow-heif>=0.18.0",
     "pydantic",
     "rich",

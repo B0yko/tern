@@ -98,7 +98,7 @@ _WHISPER_MODEL_URLS = {
 }
 
 
-# Minimum acceptable Whisper model size — Q5 turbo is ~547 MB, tiny.en
+# Minimum acceptable Whisper model size — Q5 turbo is ~547 MiB, tiny.en
 # is ~75 MB, base.en is ~141 MB. 50 MB is well below the smallest while
 # still safely catching the "HF returned an HTML maintenance page" or
 # "connection dropped at 5 MB" failure modes. Same defence as the
@@ -118,7 +118,7 @@ def _download_whisper_model(model_path: Path) -> None:
          the HTML and we renamed it to .bin. whisper-cli then crashes
          with "magic number mismatch" and the broken file SURVIVES,
          skipping re-download on every subsequent indexing run.
-      2. Truncated body — connection drop at 3 MB into a 547 MB stream
+      2. Truncated body — connection drop at 3 MB into a 547 MiB stream
          returns successfully from urlopen. Without a min-size guard
          we ship the 3 MB blob as a "model".
       3. Hung connection — no timeout means a stalled TCP socket can

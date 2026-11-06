@@ -30,6 +30,14 @@ logger = logging.getLogger("tern.search")
 # both "covid" and "19".
 FTS5_STRIP = re.compile(r'[^\w\s"]')
 
+# FTS5 reads a bare uppercase AND, OR, NOT or NEAR as an operator, and the
+# explicit AND chain built below turns "rock OR roll" into
+# "rock AND OR AND (roll* OR roll)", a syntax error. The per-channel
+# try/except swallows it, so the user gets zero transcript and OCR hits for
+# "rock OR roll", "do NOT disturb" or just "the OR". Operators are
+# case-sensitive in FTS5, so lowercasing them makes them ordinary words.
+FTS5_OPERATOR = re.compile(r"\b(?:AND|OR|NOT|NEAR)\b")
+
 
 def sanitize_fts_query(q: str) -> str:
     """Turn a user query into a safe FTS5 MATCH expression.
@@ -46,6 +54,7 @@ def sanitize_fts_query(q: str) -> str:
     """
     raw = q
     sanitized = FTS5_STRIP.sub(" ", raw)
+    sanitized = FTS5_OPERATOR.sub(lambda m: m.group(0).lower(), sanitized)
     sanitized = re.sub(r"\s+", " ", sanitized).strip()
     if not sanitized:
         return '""'

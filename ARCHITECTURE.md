@@ -114,6 +114,13 @@ channel still returned something, so the result list never looked broken
 enough to report. Stripping the hyphen turns it into an AND, which is what
 people mean anyway.
 
+The words `AND`, `OR`, `NOT` and `NEAR` were another. FTS5 treats them as
+operators only in capitals, and the sanitiser joins the words with explicit
+ANDs, so `rock OR roll` became `rock AND OR AND (roll* OR roll)` and failed
+the same silent way. Lowercasing those four words makes them ordinary
+words, so the query finds the text that contains them. `ANDROID` and `NOTE`
+are untouched, because the rule is whole-word.
+
 Unbalanced quotes are the same class of problem. Search-as-you-type means that
 the moment someone presses `"` the query is syntactically invalid, so an odd
 quote count gets a closing quote appended.
@@ -131,7 +138,9 @@ first, because it is the most expensive part of a query. The code's own
 estimate is 50–150 ms for the warm embed against 10–30 ms per FTS5 channel,
 so running the two side by side hides the FTS5 time under the embed instead
 of adding them up. `scripts/qa_smoke.py` holds the whole
-request to a p50 under 100 ms and a p99 under 200 ms on Apple Silicon.
+request to a p50 under 100 ms and a p99 under 200 ms on Apple Silicon (500 ms
+and 800 ms when `CI=true`; CI does not run the script, so this is a local
+check).
 
 Hits are then bucketed by `(file_id, ts_ms // 5000)`. A bucket holding more
 than one source is the strongest signal Tern has: speech, on-screen text and
@@ -188,21 +197,27 @@ so the writers are defensive.
   or file name with `&` or `"` cannot break the document or inject
   structure. Clip names and marker values are truncated *before* escaping,
   so a length cap can never cut an entity like `&amp;` in half, which Final
-  Cut and DaVinci reject as a corrupt import.
+  Cut and DaVinci reject as a corrupt import. The `src` of each asset is a
+  percent-encoded `file://` URL (`_file_url` in `clip.py`), not a raw path,
+  because a raw path with a space, `#` or `%` in it is not a URL and Final
+  Cut reports that media as missing.
 - **CSV formula injection.** A cell that starts with `=`, `+`, `-`, `@`, a
   tab or a carriage return, including after leading spaces, gets a leading
   single quote, so a spreadsheet treats it as text rather than a formula.
 - **Bounded input.** CSV and FCPXML exports take at most 200 hits, project
   names are capped at 200 characters, and a clip may not be longer than 30
   minutes.
-- **Source allowlist.** `/api/export/clip` accepts a source only if it is
-  inside the workspace or is an indexed file, the same check `/api/file`
-  uses. Without it, exporting an arbitrary file and then downloading the
-  result from the workspace would be a way to read any file on the machine.
+- **Source allowlist.** `/api/export/clip` and `/api/export/fcpxml` accept a
+  source only if it is inside the workspace or is an indexed file, the same
+  check `/api/file` uses, and make it before anything touches the disk.
+  Without it, exporting an arbitrary file and then downloading the result
+  from the workspace would be a way to read any file on the machine.
 - **Timeouts.** ffmpeg gets 120 s for an MP3 extract and 300 s for a video
   re-encode, and each ffprobe call during FCPXML generation gets 30 s. A
-  timeout comes back as a 504 whose message names the likely cause (a
-  corrupt source or a stalled mount) and is logged to `tern-crash.log`.
+  timeout while reading a file's duration comes back as a 504 whose message
+  names the likely cause (a corrupt source or a stalled mount) and is logged
+  to `tern-crash.log`; a timeout while reading its frame size and rate falls
+  back to 1080p30, so the export still ships.
 
 Video clips are encoded with `h264_videotoolbox` rather than libx264, which
 is GPL. `clip.py` records the measurement behind the `-q:v 75` setting: it
@@ -261,7 +276,7 @@ this stops casual copying, not a determined user.
 
 ## Testing
 
-539 tests across three suites: 168 for the pipeline, 358 for the API, and
+556 tests across three suites: 171 for the pipeline, 372 for the API, and
 13 for the licence server's seat rules.
 
 ```bash
