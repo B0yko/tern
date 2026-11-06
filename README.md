@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="tauri/src-tauri/icons/128x128@2x.png" width="112" alt="Tern app icon">
+  <img src="docs/media/social-preview.png" alt="Tern: ⌘F for your video archive" width="880">
 </p>
 
 <h1 align="center">Tern</h1>
