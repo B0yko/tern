@@ -24,7 +24,9 @@ jobs:
     # with the reason; everything else runs. HF_HUB_OFFLINE makes sure a
     # missing model is a skip, not a 1.5 GB download.
     name: python
-    runs-on: macos-14
+    # macos-14 arm64 images were retired on 2026-11-02; macos-15 is the
+    # closest supported arm64 image to the app's macOS 14 floor.
+    runs-on: macos-15
     timeout-minutes: 30
     env:
       HF_HUB_OFFLINE: "1"
@@ -87,7 +89,7 @@ jobs:
     # runtime, models and ffmpeg in resources/ (scripts/prepare_bundle.sh)
     # and a signing identity, so it is not built here.
     name: tauri
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
