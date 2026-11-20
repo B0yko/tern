@@ -4,32 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!--
-  Content-Security-Policy. Defense in depth on top of the _esc()
-  XSS audit: if a future regression sneaks user-controlled HTML past the
-  escape helpers, this policy still blocks the dangerous follow-up:
-
-    - script-src 'self'      — no inline <script>, no eval, no remote
-                                .js. Stops the "load attacker.com/x.js"
-                                escalation from any successful XSS.
-    - object-src 'none'      — no <object>/<embed>/Flash escape hatch.
-    - base-uri 'self'        — defeats <base href="…"> rebasing tricks.
-    - frame-ancestors 'none' — Tern can never be iframed, period
-                                (clickjacking class).
-    - default-src 'self'     — everything not separately listed is
-                                same-origin (http://127.0.0.1:<port>).
-    - img-src / media-src include data: + blob: so canvas snapshots and
-      audio-decode blobs continue to work; both fully covered by 'self'
-      for the /api/file render path.
-    - style-src 'unsafe-inline' is required — the JS modules use inline
-      `style="…"` attributes heavily for layout math (trim handles,
-      positioning). Removing this would need a substantial rewrite.
-
-  Fonts (Inter / Inter Tight / JetBrains Mono) are now bundled locally
-  under /fonts/ — see fonts.css below. Tern never talks to Google on
-  launch; the policy can stay strictly 'self' for both style-src and
-  font-src.
+  The webview loads this document from the sidecar, not Tauri's asset
+  protocol. 'self' includes its selected loopback port, not other ports.
+  Trim handles and result thumbnails need style attributes, not style blocks.
+  frame-ancestors is only enforced in a response header (see api/main.py).
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src-attr 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <title>Tern — Local AI search</title>
 <link rel="stylesheet" href="/fonts.css">
 <link rel="stylesheet" href="/tokens.css">

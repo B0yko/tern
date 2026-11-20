@@ -3107,6 +3107,8 @@ class _CachedStaticFiles(StaticFiles):
     """
     async def get_response(self, path, scope):
         resp = await super().get_response(path, scope)
+        if path in (".", "index.html"):
+            resp.headers["Content-Security-Policy"] = "frame-ancestors 'none'"
         # Only set on 200 responses for files we actually own.
         if getattr(resp, "status_code", 0) == 200:
             if path.startswith("fonts/") or path == "fonts.css":
