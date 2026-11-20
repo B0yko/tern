@@ -14,8 +14,8 @@ Files are **not committed to git** (see `.gitignore`). `download.sh` fetches the
 - **License:** Creative Commons Attribution (CC-BY 3.0)
 - **Attribution:** © copyright Blender Foundation | www.bigbuckbunny.org
 - **Duration:** 10:34 (635 s)
-- **Resolution:** 1280×720, h264 + aac
-- **File size:** ~154 MB
+- **Resolution:** 1280×720 (the script merges the ≤720p video-only stream with m4a audio; YouTube's progressive mp4 is 360p-only and too blurry for the visual channel)
+- **File size:** ~100 MB (codec varies with YouTube's offerings: AV1 or H.264)
 - **Why this file:** cinematic animation with rich visual variety (forest scenes, a rabbit, butterflies, multiple environments), no dialogue and almost no on-screen text. Stress-tests the visual semantic channel (SigLIP-2) and shows that the OCR channel correctly returns nothing rather than hallucinating.
 
 ### `yc_lecture1_intro.mp4`

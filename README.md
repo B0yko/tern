@@ -22,7 +22,7 @@
   <tr>
     <td align="center" width="200"><b>3 search channels</b><br><sub>speech · on-screen text · picture</sub></td>
     <td align="center" width="200"><b>On-device</b><br><sub>no media leaves the Mac</sub></td>
-    <td align="center" width="200"><b>539 tests</b><br><sub>pipeline · API · licence rules</sub></td>
+    <td align="center" width="200"><b>541 tests</b><br><sub>pipeline · API · licence rules</sub></td>
     <td align="center" width="200"><b>5 export formats</b><br><sub>MP4 · MP3 · SRT · CSV · FCPXML</sub></td>
   </tr>
 </table>
@@ -94,10 +94,12 @@ demo podcast (the episodes are not included in this repository).*
 
 ### From a query to one ranked list
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/media/fusion-dark.svg">
+<a href="https://github.com/B0yko/tern#gh-light-mode-only">
   <img src="docs/media/fusion-light.svg" alt="Four channels (speech, on-screen text, picture and filename) are searched in parallel and weighted; hits are grouped into five-second windows per file, where agreement between channels earns a capped bonus; a filename boost, a per-file cap and a visual noise floor then produce one ranked list">
-</picture>
+</a>
+<a href="https://github.com/B0yko/tern#gh-dark-mode-only">
+  <img src="docs/media/fusion-dark.svg" alt="Four channels (speech, on-screen text, picture and filename) are searched in parallel and weighted; hits are grouped into five-second windows per file, where agreement between channels earns a capped bonus; a filename boost, a per-file cap and a visual noise floor then produce one ranked list">
+</a>
 
 Each channel is searched on its own, so one failing channel degrades the list
 instead of blanking it. The noise floor exists because SigLIP always returns
@@ -252,7 +254,7 @@ permissions and timeouts.
 
 ## Tests
 
-539 tests: 168 for the pipeline, 358 for the API, and 13 for the licence
+541 tests: 170 for the pipeline, 358 for the API, and 13 for the licence
 server's seat rules.
 
 ```bash
@@ -269,9 +271,9 @@ clone runs green. [CI](.github/workflows/ci.yml) runs the same suites on a
 macOS runner with an empty workspace and the Hugging Face hub offline, the
 Deno suite on Linux, and a `cargo check` of the desktop shell.
 With the full runtime and the downloadable demo workspace, 15 API tests
-that need indexed podcast audio still skip; on the author's machine, whose
-demo also holds eight synthetic podcast episodes that are not in this
-repository, all 500 pass.
+that need indexed podcast audio still skip; the author's demo also holds
+eight synthetic podcast episodes that are not in this repository, which
+cover those remaining tests.
 
 ## Layout
 

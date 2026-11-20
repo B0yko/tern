@@ -12,10 +12,13 @@ if ! command -v yt-dlp >/dev/null 2>&1; then
 fi
 
 # 1. Big Buck Bunny (CC-BY, Blender Foundation), full 10:34
+# bestvideo+bestaudio: YouTube's progressive mp4 ("best[ext=mp4]") tops out
+# at 360p, and 360p frames score below the visual noise floor on queries
+# like "butterfly". Merge the <=720p video-only stream with m4a audio.
 if [ ! -f big_buck_bunny.mp4 ]; then
   echo "→ Big Buck Bunny (CC-BY, Blender Foundation)..."
   yt-dlp \
-    -f 'best[ext=mp4][height<=720]/best[height<=720]/best' \
+    -f 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best' \
     --merge-output-format mp4 \
     -o 'big_buck_bunny.%(ext)s' \
     --no-warnings \
@@ -29,7 +32,7 @@ fi
 if [ ! -f yc_lecture1_intro.mp4 ]; then
   echo "→ YC Lecture 1 first 10 min (Y Combinator, local testing only)..."
   yt-dlp \
-    -f 'best[ext=mp4][height<=720]/best[height<=720]/best' \
+    -f 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best' \
     --merge-output-format mp4 \
     --download-sections '*0:00-10:00' \
     --force-keyframes-at-cuts \

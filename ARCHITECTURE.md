@@ -261,7 +261,7 @@ this stops casual copying, not a determined user.
 
 ## Testing
 
-539 tests across three suites: 168 for the pipeline, 358 for the API, and
+541 tests across three suites: 170 for the pipeline, 358 for the API, and
 13 for the licence server's seat rules.
 
 ```bash

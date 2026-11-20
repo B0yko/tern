@@ -71,6 +71,21 @@ if [ ! -x "$ROOT/service_pipeline/bin/vision-ocr" ]; then
 fi
 green "  vision-ocr ready"
 
+# Sanity: demo videos need enough resolution for the visual channel. SigLIP
+# scores on blurry low-res frames fall below the search noise floor, so a
+# 360p copy silently turns picture-only queries ("butterfly") into 0 hits.
+# download.sh fetches <=720p video-only + audio; warn on anything smaller.
+if command -v ffprobe >/dev/null; then
+  for v in "$DEMO"/real_videos/*.mp4; do
+    [ -f "$v" ] || continue
+    H=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of csv=p=0 "$v" 2>/dev/null)
+    if [ -n "$H" ] && [ "$H" -lt 720 ]; then
+      red "  warning: $(basename "$v") is ${H}p — picture-only search may return nothing."
+      echo "    delete it and re-run demo/real_videos/download.sh (fetches 720p)."
+    fi
+  done
+fi
+
 # Refuse to run next to a backend that is already serving demo/ (./run.sh
 # defaults to it): a second process opening the same ChromaDB collection can
 # corrupt it, and the re-index below deletes demo/db/.

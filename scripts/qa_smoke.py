@@ -300,7 +300,14 @@ def main() -> int:
 
     # ── Transcript search ──────────────────────────────────────
     qa.section("Transcript search (speech-to-text)")
+    # "pricing" lives in the synthetic podcast episodes, which are not part
+    # of the downloadable demo; skip it when no audio file is indexed.
+    has_audio = get(args.base, "/api/stats").get("files_audio", 0) > 0
     for q, expect_kind in [("stanford", "video"), ("pricing", "audio")]:
+        if expect_kind == "audio" and not has_audio:
+            qa.skip(f"transcript: '{q}' returns hit with snippet",
+                    "no indexed audio (synthetic podcast episodes are not in the downloadable demo)")
+            continue
         r = search(args.base, q, limit=5)
         transcript_hits = [h for h in r["hits"] if h["source"] in ("transcript", "multi") and h.get("snippet")]
         qa.check(f"transcript: '{q}' returns hit with snippet",
@@ -325,25 +332,31 @@ def main() -> int:
     # most-prominent power-feature claim into 0-hits.
     #
     # "customer success" is the canonical example used in those
-    # surfaces. Backed by 4 transcript + 12 OCR rows in the
-    # bundled demo, so a 0-hit return is a real regression — not a
-    # demo-content drift issue.
+    # surfaces. It lives in the synthetic podcast episodes (4 transcript +
+    # 12 OCR rows on the author's machine), which are not part of the
+    # downloadable demo. With no indexed audio there is nothing to match,
+    # so the checks skip on a fresh clone instead of failing; where the
+    # episodes are indexed, a 0-hit return is a real regression.
     qa.section("Exact-phrase search (quoted query)")
-    r = search(args.base, '"customer success"', limit=20)
-    qa.check("quoted search: '\"customer success\"' returns hits",
-             r["count"] >= 1,
-             f"count={r['count']} — sanitize_fts_query may be eating "
-             f"the quotes or FTS5 phrase-match regressed")
-    # Each returned snippet from a quoted phrase search must literally
-    # contain BOTH words in sequence (with normal interstitial whitespace).
-    # A regression that drops quote-preservation typically returns hits
-    # for either word alone — those would NOT contain the literal
-    # "customer success" two-word sequence.
-    snippet_hits = [h for h in r["hits"] if "customer success" in (h.get("snippet") or "").lower().replace("<mark>", "").replace("</mark>", "")]
-    qa.check("quoted search: at least one snippet contains the exact 'customer success' phrase",
-             len(snippet_hits) >= 1,
-             f"got {len(r['hits'])} hits but none contained the exact phrase — "
-             f"FTS5 phrase-match may have regressed to bag-of-words")
+    if not has_audio:
+        qa.skip("quoted search: '\"customer success\"'",
+                "no indexed audio (the phrase lives in the synthetic podcast episodes)")
+    else:
+        r = search(args.base, '"customer success"', limit=20)
+        qa.check("quoted search: '\"customer success\"' returns hits",
+                 r["count"] >= 1,
+                 f"count={r['count']} — sanitize_fts_query may be eating "
+                 f"the quotes or FTS5 phrase-match regressed")
+        # Each returned snippet from a quoted phrase search must literally
+        # contain BOTH words in sequence (with normal interstitial whitespace).
+        # A regression that drops quote-preservation typically returns hits
+        # for either word alone — those would NOT contain the literal
+        # "customer success" two-word sequence.
+        snippet_hits = [h for h in r["hits"] if "customer success" in (h.get("snippet") or "").lower().replace("<mark>", "").replace("</mark>", "")]
+        qa.check("quoted search: at least one snippet contains the exact 'customer success' phrase",
+                 len(snippet_hits) >= 1,
+                 f"got {len(r['hits'])} hits but none contained the exact phrase — "
+                 f"FTS5 phrase-match may have regressed to bag-of-words")
 
     # ── OCR search ──────────────────────────────────────────────
     qa.section("OCR search (on-screen text)")

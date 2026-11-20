@@ -155,7 +155,10 @@ class KeyframeExtractor:
             "-loglevel", "info",   # <-- was "error", which hid the pts_time we need
             "-i", str(video_path),
             "-vf", f"select='gt(scene,{self.scene_threshold})',showinfo,scale=1280:-2",
-            "-vsync", "vfr",
+            # -fps_mode, not -vsync: ffmpeg 8 removed -vsync, and the old
+            # flag made this command exit 8 on every video, silently
+            # degrading all keyframes to the interval fallback.
+            "-fps_mode", "vfr",
             "-frames:v", str(self.max_keyframes),
             "-f", "image2",
             pattern,
@@ -180,6 +183,17 @@ class KeyframeExtractor:
                 "(corrupt video or stuck demuxer); skipping"
             )
         # ffmpeg writes showinfo to stderr. Parse pts_time from stderr.
+        if proc.returncode != 0:
+            # Loud, not silent: a failed extraction degrades every keyframe
+            # to the interval fallback, which misses short shots. This is
+            # how the ffmpeg-8 -vsync removal hid for a whole release.
+            import sys
+            print(
+                f"WARNING: ffmpeg scene extraction exited {proc.returncode} for "
+                f"{video_path.name}; falling back to interval frames. "
+                f"stderr sample: {proc.stderr[:400]}",
+                file=sys.stderr,
+            )
         result: list[tuple[int, Path]] = []
         ts_list = self._parse_showinfo(proc.stderr)
         files = sorted(out_dir.glob("kf_*.jpg"))
@@ -368,7 +382,7 @@ class Embedder:
         #  - TERN_DEVICE env var wins if set (e.g. "cpu" on CI / containerized
         #    runs where MPS allocation may fail with OOM on small hosts).
         #  - GitHub Actions sets CI=true; fall back to CPU there too because
-        #    the macos-14 runner caps MPS shared pool at ~7.9 GiB and SigLIP-2
+        #    the macOS runner caps MPS shared pool at ~7.9 GiB and SigLIP-2
         #    base wants ~750 MiB which conflicts with other CI processes.
         #  - Otherwise prefer MPS when available, else CPU.
         forced = os.environ.get("TERN_DEVICE", "").strip().lower()
